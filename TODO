@@ -1,0 +1,14 @@
+* Replace current command-line parsing with more decent and flexible solution
+  along with new syntax - use getopt.
+
+* Support more operations (clone, generate new unique id, convert, etc.).
+
+* Support dynamic-size VDI.
+
+* Support more virtual disk formats (VHD, VMDK, etc.).
+
+* Support big-endian machines.
+
+* Add GUI front-end.
+
+* Fix all bugs. ;-)
