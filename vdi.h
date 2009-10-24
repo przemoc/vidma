@@ -34,9 +34,9 @@ enum vdi_type {
  * to sectors (2^9 bytes each), therefore each full sector has only 128 (2^7)
  * entries.
  */
-#define VDI_OFFSET_DATA(msize)	((1 + ((new_msize + 127) >> 7)) << 9)
+#define VDI_OFFSET_DATA(msize)	((1 + ((msize + 127) >> 7)) << 9)
 
-#define VDI_DISK_SIZE(msize)	(((uint64_t)new_msize) << 20)
+#define VDI_DISK_SIZE(msize)	(((uint64_t)msize) << 20)
 
 /* 16 bytes */
 typedef struct vdi_uuid {
