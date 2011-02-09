@@ -28,7 +28,7 @@ vidma: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 
 clean:
-	$(RM) -rf $(OUT) $(OBJS)
+	$(RM) $(OUT) $(OBJS)
 
 install:
 	$(INSTALL_PROGRAM) $(OUT) $(VIDMA_BINDIR)/$(OUT)
