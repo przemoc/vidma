@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Przemyslaw Pawelczyk <przemoc@gmail.com>
+ * Copyright (C) 2009-2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
  *
  * This software is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2.
@@ -19,10 +19,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#if __WIN32__
-# include <windows.h>
-#endif
-
+#include "common.h"
 #include "vdi.h"
 
 vd_type_t vd_vdi = {
@@ -73,13 +70,13 @@ int vdi_resize(int fin, int fout, uint32_t new_msize)
 
 	puts(":: mission started");
 	move_data(&vdi, fin, fout, new_msize);
-	FTRUNC(fout, VDI_OFFSET_DATA(new_msize) + VDI_DISK_SIZE(new_msize));
+	ftruncate(fout, VDI_OFFSET_DATA(new_msize) + VDI_DISK_SIZE(new_msize));
 	puts(":: disk resized");
 	fix_block_mapping(fout, new_msize);
 	update_header(&vdi, fout, new_msize);
 	print_info_from_struct(&vdi, 0);
 	puts(":: final syncing");
-	FSYNC(fout);
+	fsync(fout);
 	puts(":: mission accomplished");
 	return SUCCESS;
 }
@@ -170,7 +167,7 @@ static void move_data(vdi_start_t *vdi, int fin, int fout, uint32_t new_msize)
 	lseek(fin, vdi->header.offset.data, SEEK_SET);
 	lseek(fout, VDI_OFFSET_DATA(new_msize), SEEK_SET);
 
-	if (delta || !ARE_FILES_BEHIND_FDS_EQUAL(fin, fout)) {
+	if (delta || same_file_behind_fds(fin, fout) == FAILURE) {
 		puts(":: moving data");
 		buffer = malloc(MB + delta * (delta > 0));
 		gettimeofday(&start, NULL);
@@ -189,7 +186,7 @@ static void move_data(vdi_start_t *vdi, int fin, int fout, uint32_t new_msize)
 				write(fout, buffer, MB);
 			}
 		puts("\n:: syncing");
-		FSYNC(fout);
+		fsync(fout);
 		gettimeofday(&end, NULL);
 		free(buffer);
 		printf(

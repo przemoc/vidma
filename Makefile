@@ -1,6 +1,14 @@
 OBJS = main.o vdi.o
 OUT = vidma
 
+CC_V := $(shell $(CC) -v 2>&1)
+
+ifneq (,$(findstring mingw,$(CC_V)))
+	OBJS += common_win.o
+else
+	OBJS += common_posix.o
+endif
+
 CFLAGS += -Wall
 override CFLAGS += -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=600
 
