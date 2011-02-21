@@ -134,7 +134,7 @@ static void print_info_from_struct(vdi_start_t *v, int full)
 		PRINTU32(v, header.size);
 		PRINTU32(v, header.type);
 		PRINTU32(v, header.flags);
-		PRINTU32(v, header.offset.blocks);
+		PRINTU32(v, header.offset.bam);
 	}
 	PRINTU32(v, header.offset.data);
 	if (full) {
@@ -186,7 +186,7 @@ static int check_assumptions(vdi_start_t *vdi)
 		puts("ERROR   Blocks with extra data are not supported yet.");
 		return FAILURE;
 	}
-	if (vdi->header.offset.blocks > vdi->header.offset.data) {
+	if (vdi->header.offset.bam > vdi->header.offset.data) {
 		puts("ERROR   Block allocation map following data is not supported.");
 		return FAILURE;
 	}
@@ -206,8 +206,8 @@ static int check_assumptions(vdi_start_t *vdi)
 static int check_correctness(vdi_start_t *vdi)
 {
 	uint64_t start_end = sizeof(vdi_start_t);
-	uint64_t bam_beg = vdi->header.offset.blocks;
-	uint64_t bam_end = vdi->header.offset.blocks +
+	uint64_t bam_beg = vdi->header.offset.bam;
+	uint64_t bam_end = vdi->header.offset.bam +
 	                   VDI_BAM_SIZE(vdi->header.disk.blk_count);
 	uint64_t data_beg = vdi->header.offset.data;
 	uint64_t data_end = vdi->header.offset.data + vdi->header.disk.size;
@@ -279,7 +279,7 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 
 static inline uint32_t min_data_offset(vdi_start_t *vdi, uint32_t blk_count)
 {
-	return ALIGN2(vdi->header.offset.blocks + VDI_BAM_SIZE(blk_count),
+	return ALIGN2(vdi->header.offset.bam + VDI_BAM_SIZE(blk_count),
 	              VDI_SECTOR_SIZE);
 }
 
@@ -364,11 +364,11 @@ static void fix_block_allocation_map(vdi_start_t *vdi, int fd,
 	uint32_t i, j;
 	vdi_bam_entry_t fill[FILL_COUNT];
 	uint32_t max_bam_entry_count = (data_offset(vdi, new_blk_count) -
-	                                vdi->header.offset.blocks) /
+	                                vdi->header.offset.bam) /
 	                               VDI_BAM_ENTRY_SIZE;
 
 	puts(":: fixing block allocation map");
-	lseek(fd, vdi->header.offset.blocks, SEEK_SET);
+	lseek(fd, vdi->header.offset.bam, SEEK_SET);
 
 	for (i = 0; i < (new_blk_count & -FILL_COUNT); i += FILL_COUNT) {
 		for (j = 0; j < FILL_COUNT; j++)

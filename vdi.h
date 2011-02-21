@@ -80,7 +80,7 @@ typedef struct vdi_chs {
 
 /* 8 bytes */
 typedef struct vdi_offset {
-	uint32_t   blocks;
+	uint32_t   bam;
 	uint32_t   data;
 } vdi_off_t;
 
