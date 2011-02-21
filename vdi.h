@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Przemyslaw Pawelczyk <przemoc@gmail.com>
+ * Copyright (C) 2009-2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
  *
  * This software is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2.
@@ -11,11 +11,35 @@
  * for more details.
  */
 
+/*
+ * VDI consists of 3 areas:
+ * - preheader + header (start),
+ * - block allocation map (BAM),
+ * - allocated blocks (data).
+ *
+ * BAM offset and data offset used to be aligned to 512 bytes in the old days,
+ * but since VirtualBox v4.0 (released 2010-12-22) they changed it to 4096.
+ * It's a good change considering block/cluster sizes of filesystems and
+ * sector sizes of drives today.
+ *
+ * If BAM offset is not 4K-aligned, there is no real gain in fixing it though.
+ * And there is definitely no point in decreasing once increased data offset.
+ * Even if it's only 1MB, then BAM can map up to (almost) 256K blocks.
+ * Take into an account standard block size = 1MB and you get (almost) 256GB.
+ *
+ * That's why vidma preserves BAM offset and enforces 1 megabyte alignment for
+ * data offset, but only if movement of allocated blocks is unavoidable.
+ * Forgive my waste.
+ */
+
 #ifndef VDI_H
 #define VDI_H
 
 #include "common.h"
 #include "vd.h"
+
+#define VDI_COMMENT_SIZE (256)
+#define VDI_SIGNATURE    (0xbeda107f)
 
 enum vdi_type {
 	VDI_NORMAL = 1,
@@ -24,19 +48,12 @@ enum vdi_type {
 	VDI_DIFF
 };
 
-#define VDI_COMMENT_SIZE	(256)
-#define VDI_SIGNATURE	(0xbeda107f)
+typedef uint32_t vdi_bam_entry_t;
 
-/**
- * Calculate offset of the data.
- *
- * Block mapping area starts after 512 bytes (1 sector) and it's also aligned
- * to sectors (2^9 bytes each), therefore each full sector has only 128 (2^7)
- * entries.
- */
-#define VDI_OFFSET_DATA(msize)	((1 + ((msize + 127) >> 7)) << 9)
-
-#define VDI_DISK_SIZE(msize)	(((uint64_t)msize) << 20)
+#define VDI_BAM_ENTRY_SIZE        sizeof(vdi_bam_entry_t)
+#define VDI_BAM_SIZE(blk_count)   ((blk_count) * VDI_BAM_ENTRY_SIZE)
+#define VDI_DATA_OFFSET_ALIGNMENT (1 << 20)
+#define VDI_SECTOR_SIZE           512
 
 /* 16 bytes */
 typedef struct vdi_uuid {
@@ -63,8 +80,8 @@ typedef struct vdi_chs {
 
 /* 8 bytes */
 typedef struct vdi_offset {
-	uint32_t   blocks;          /* = 512 */
-	uint32_t   data;            /* = (1 + ((blk_count + 127) >> 7)) << 9 */
+	uint32_t   blocks;
+	uint32_t   data;
 } vdi_off_t;
 
 /* 64 bytes */
@@ -77,9 +94,9 @@ typedef struct vdi_uuid_set {
 
 /* 24 bytes */
 typedef struct vdi_disk_info {
-	uint64_t   size;            /* in bytes */
-	uint32_t   blk_size;        /* = 1MB */
-	uint32_t   blk_extra_data;  /* = 0 */
+	uint64_t   size;
+	uint32_t   blk_size;
+	uint32_t   blk_extra_data;
 	uint32_t   blk_count;
 	uint32_t   blk_count_alloc;
 } vdi_di_t;
@@ -107,10 +124,6 @@ typedef struct vdi_start {
 	vdi_header_t    header;
 	uint32_t        garbage[10];
 } vdi_start_t;
-
-int vdi_check(int fd);
-void vdi_print_info(int fd);
-int vdi_resize(int fin, int fout, uint32_t new_msize);
 
 extern vd_type_t vd_vdi;
 

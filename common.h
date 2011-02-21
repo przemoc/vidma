@@ -14,12 +14,25 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <stddef.h>
 #include <inttypes.h>
+#include <sys/time.h>
 
 #define SUCCESS	0
 #define FAILURE	1
 
-#define MB	(1 << 20)
+#define ALIGN2(n, a) (((n) + (a) - 1) & ~((a) - 1))
+#define ALIGN(n, a)  ((((n) + (a) - 1) / (a)) * (a))
+
+#define Q_(x) #x
+#define Q(x) Q_(x)
+
+static inline uint64_t gettimeofday_us()
+{
+	struct timeval t;
+	gettimeofday(&t, NULL);
+	return (uint64_t)t.tv_sec * UINT64_C(1000000) + (uint64_t)t.tv_usec;
+}
 
 #if __WIN32__
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Przemyslaw Pawelczyk <przemoc@gmail.com>
+ * Copyright (C) 2009-2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
  *
  * This software is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2.
@@ -17,9 +17,9 @@
 #include <inttypes.h>
 
 typedef struct vd_ops {
-	int (*check)(int);
-	void (*print_info)(int);
-	int (*resize)(int, int, uint32_t);
+	int (*check)(int);                 /* check(fd) */
+	void (*info)(int);                 /* info(fd) */
+	int (*resize)(int, int, uint32_t); /* resize(fd_in,fd_out,new_size_in_mb) */
 } vd_ops_t;
 
 typedef struct vd_type {

@@ -1,3 +1,19 @@
-* What's new in version 0.0.1
+* What's new
+
+- Many restrictive assumptions about supported VDI files has been removed.
+  Images created in VirtualBox 4.x should work fine now. Still only fixed
+  ones can be resized.
+
+- Before resizing user gets information about upcoming operation and question
+  whether it should be really performed.
+
+- Resizing strategy has been changed. Old one was almost always moving blocks,
+  which is simply stupid and inefficient. Now if data offset can be preserved,
+  i.e. there is enough space for block allocation map, block moving will be
+  avoided. If it cannot be avoided, then new data offset will be aligned to
+  megabyte. It nicely prevents from moving blocks in possible future resizes
+  (unless you cross 255 GB boundary).
+
+* What's new in version 0.0.1 (2009-10-21)
 
 - Nothing, it's just the first public version.
