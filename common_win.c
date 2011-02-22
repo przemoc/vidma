@@ -21,7 +21,6 @@ int ftruncate64_win(int fd, int64_t length)
 
 	offset.QuadPart = length;
 	SetFilePointerEx(handle, offset, NULL, FILE_BEGIN);
-	SetFileValidData(handle, offset.QuadPart);
 	result = SetEndOfFile(handle);
 	/*
 	 * POSIX ftruncate() does not change file offset, so it should be

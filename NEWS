@@ -14,6 +14,8 @@
   megabyte. It nicely prevents from moving blocks in possible future resizes
   (unless you cross 255 GB boundary).
 
+- Running in Windows 2000 is possible now.
+
 * What's new in version 0.0.1 (2009-10-21)
 
 - Nothing, it's just the first public version.
