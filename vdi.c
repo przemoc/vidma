@@ -304,8 +304,7 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 	char *buffer;
 	uint64_t start, end;
 	uint32_t bs = vdi->header.disk.blk_size;
-	uint32_t b = vdi->header.disk.blk_count_alloc;
-	uint32_t b2m = min_u32(b, new_blk_count);
+	uint32_t blocks = min_u32(vdi->header.disk.blk_count_alloc, new_blk_count);
 	int32_t delta = data_offset(vdi, new_blk_count) - vdi->header.offset.data;
 	int same_file = (same_file_behind_fds(fin, fout) == SUCCESS);
 
@@ -321,15 +320,15 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 		start = gettimeofday_us();
 		if (delta > 0) {
 			read(fin, buffer + bs, delta);
-			for (i = 1; i <= b2m; i++) {
-				printf("\r:: block: %u / %u", i, b2m);
+			for (i = 1; i <= blocks; i++) {
+				printf("\r:: block: %u / %u", i, blocks);
 				memcpy(buffer, buffer + bs, delta);
 				read(fin, buffer + delta, bs);
 				write(fout, buffer, bs);
 			}
 		} else
-			for (i = 1; i <= b2m; i++) {
-				printf("\r:: block: %u / %u", i, b2m);
+			for (i = 1; i <= blocks; i++) {
+				printf("\r:: block: %u / %u", i, blocks);
 				read(fin, buffer, bs);
 				write(fout, buffer, bs);
 			}
@@ -341,25 +340,25 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 			printf(
 			       ":: data moved (%u blocks by %u bytes "
 			       "in %"PRIu64" ms = ~%"PRIu64" B/us)\n",
-			       b2m,
+			       blocks,
 			       abs(delta),
 			       (end - start) / 1000,
-			       ((uint64_t)b2m * (uint64_t)bs) / (end - start)
+			       ((uint64_t)blocks * (uint64_t)bs) / (end - start)
 			      );
 		else
 			printf(
 			       ":: data copied (%u blocks "
 			       "in %"PRIu64" ms = ~%"PRIu64" B/us)\n",
-			       b2m,
+			       blocks,
 			       (end - start) / 1000,
-			       ((uint64_t)b2m * (uint64_t)bs) / (end - start)
+			       ((uint64_t)blocks * (uint64_t)bs) / (end - start)
 			      );
 	}
 
 	vdi->header.offset.data = data_offset(vdi, new_blk_count);
 	vdi->header.disk.size = disk_size(vdi, new_blk_count);
 	vdi->header.disk.blk_count = new_blk_count;
-	vdi->header.disk.blk_count_alloc = b2m;
+	vdi->header.disk.blk_count_alloc = blocks;
 }
 
 static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout)
