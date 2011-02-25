@@ -45,6 +45,8 @@ static void read_start(int fd, vdi_start_t *vdi);
 static void write_start(int fd, vdi_start_t *vdi);
 static int check_assumptions(vdi_start_t *vdi);
 static int check_correctness(vdi_start_t *vdi);
+static void find_last_blocks(vdi_start_t *vdi, int fd,
+                             uint32_t *block_no, uint32_t *block_pos);
 static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
                                uint32_t new_blk_count);
 static inline uint32_t data_offset(vdi_start_t *vdi, uint32_t blk_count);
@@ -233,10 +235,43 @@ static int check_correctness(vdi_start_t *vdi)
 	       ? SUCCESS : FAILURE;
 }
 
+static void find_last_blocks(vdi_start_t *vdi, int fd,
+                             uint32_t *block_no, uint32_t *block_pos)
+{
+	vdi_bam_entry_t *bam;
+	uint32_t i;
+	uint32_t blocks = vdi->header.disk.blk_count;
+	uint32_t n = 0;
+	uint32_t no = 0;
+	uint32_t pos = 0;
+
+	lseek(fd, vdi->header.offset.bam, SEEK_SET);
+	bam = malloc(_1MB);
+	while (blocks -= n) {
+		n = read(fd, bam,
+		         min_u64(VDI_BAM_SIZE((uint64_t)blocks), _1MB)) /
+		    VDI_BAM_ENTRY_SIZE;
+		for (i = 0; i < n; i++)
+			if (bam[i] != -1) {
+				no = i;
+				if (pos < bam[i])
+					pos = bam[i];
+			}
+	}
+	free(bam);
+	if (block_no)
+		*block_no = no;
+	if (block_pos)
+		*block_pos = pos;
+}
+
 static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
                                uint32_t new_blk_count)
 {
 	char buf[4];
+	uint32_t last_blk_no = 0;
+	uint32_t last_blk_pos = 0;
+	uint32_t min_blk_count = 1;
 	int32_t delta = data_offset(vdi, new_blk_count) - vdi->header.offset.data;
 	int same_file = same_file_behind_fds(fin, fout) == SUCCESS;
 
@@ -245,6 +280,18 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 	       vdi->header.disk.blk_count, new_blk_count);
 	printf("(each block has %10u bytes)\n",
 	       vdi->header.disk.blk_size);
+
+	if (vdi->header.type == VDI_DYNAMIC) {
+		find_last_blocks(vdi, fin, &last_blk_no, &last_blk_pos);
+		min_blk_count = max_u32(last_blk_no, last_blk_pos) + 1;
+		if (new_blk_count < min_blk_count) {
+			printf("But minimal possible block count equals\n"
+			       "     %21u block(s)\n",
+			       min_blk_count);
+			return FAILURE;
+		}
+	}
+
 	printf("\nDisk size will change\n"
 	       "from %21"PRIu64" bytes (%15"PRIu64" MB)\n"
 	       "to   %21"PRIu64" bytes (%15"PRIu64" MB)\n",
