@@ -42,7 +42,7 @@
 #define VDI_SIGNATURE    (0xbeda107f)
 
 enum vdi_type {
-	VDI_NORMAL = 1,
+	VDI_DYNAMIC = 1,
 	VDI_FIXED,
 	VDI_UNDO,
 	VDI_DIFF
