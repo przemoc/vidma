@@ -49,8 +49,8 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
                                uint32_t new_blk_count);
 static inline uint32_t data_offset(vdi_start_t *vdi, uint32_t blk_count);
 static inline uint64_t disk_size(vdi_start_t *vdi, uint32_t blk_count);
-static void move_data(vdi_start_t *vdi, int fin, int fout,
-                      uint32_t new_blk_count);
+static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
+                         uint32_t new_blk_count);
 static void fix_block_allocation_map(vdi_start_t *vdi, int fd,
                                      uint32_t new_blk_count);
 static void update_header(vdi_start_t *vdi, int fd, uint32_t new_blk_count);
@@ -298,8 +298,8 @@ static inline uint64_t disk_size(vdi_start_t *vdi, uint32_t blk_count)
 	return ((uint64_t)blk_count) * ((uint64_t)vdi->header.disk.blk_size);
 }
 
-static void move_data(vdi_start_t *vdi, int fin, int fout,
-                      uint32_t new_blk_count)
+static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
+                         uint32_t new_blk_count)
 {
 	uint32_t i;
 	char *buffer;
@@ -406,7 +406,7 @@ static void update_header(vdi_start_t *vdi, int fd, uint32_t new_blk_count)
 static int resize(vdi_start_t *vdi, int fin, int fout, uint32_t new_blk_count)
 {
 	puts(":: mission started");
-	move_data(vdi, fin, fout, new_blk_count);
+	rewrite_data(vdi, fin, fout, new_blk_count);
 	ftruncate(fout,
 	          data_offset(vdi, new_blk_count) + disk_size(vdi, new_blk_count));
 	puts(":: disk resized");
