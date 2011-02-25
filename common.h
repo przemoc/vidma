@@ -36,6 +36,26 @@ static inline uint64_t gettimeofday_us()
 	return (uint64_t)t.tv_sec * UINT64_C(1000000) + (uint64_t)t.tv_usec;
 }
 
+static inline uint32_t min_u32(uint32_t a, uint32_t b)
+{
+	return a < b ? a : b;
+}
+
+static inline uint64_t min_u64(uint64_t a, uint64_t b)
+{
+	return a < b ? a : b;
+}
+
+static inline uint32_t max_u32(uint32_t a, uint32_t b)
+{
+	return a > b ? a : b;
+}
+
+static inline uint64_t max_u64(uint64_t a, uint64_t b)
+{
+	return a > b ? a : b;
+}
+
 #if __WIN32__
 
 #include <io.h>

@@ -305,7 +305,7 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 	uint64_t start, end;
 	uint32_t bs = vdi->header.disk.blk_size;
 	uint32_t b = vdi->header.disk.blk_count_alloc;
-	uint32_t b2m = (b < new_blk_count ? b : new_blk_count);
+	uint32_t b2m = min_u32(b, new_blk_count);
 	int32_t delta = data_offset(vdi, new_blk_count) - vdi->header.offset.data;
 	int same_file = (same_file_behind_fds(fin, fout) == SUCCESS);
 
