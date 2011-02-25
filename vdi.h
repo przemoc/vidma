@@ -52,7 +52,7 @@ typedef uint32_t vdi_bam_entry_t;
 
 #define VDI_BAM_ENTRY_SIZE        sizeof(vdi_bam_entry_t)
 #define VDI_BAM_SIZE(blk_count)   ((blk_count) * VDI_BAM_ENTRY_SIZE)
-#define VDI_DATA_OFFSET_ALIGNMENT (1 << 20)
+#define VDI_DATA_OFFSET_ALIGNMENT _1MB
 #define VDI_SECTOR_SIZE           512
 
 /* 16 bytes */

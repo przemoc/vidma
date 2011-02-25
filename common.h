@@ -21,6 +21,8 @@
 #define SUCCESS	0
 #define FAILURE	1
 
+#define _1MB (1 << 20)
+
 #define ALIGN2(n, a) (((n) + (a) - 1) & ~((a) - 1))
 #define ALIGN(n, a)  ((((n) + (a) - 1) / (a)) * (a))
 

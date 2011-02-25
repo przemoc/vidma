@@ -85,7 +85,7 @@ static int vdi_resize(int fin, int fout, uint32_t new_msize)
 	    check_correctness(&vdi) == FAILURE)
 		return FAILURE;
 
-	new_blk_count = ALIGN((uint64_t)new_msize * UINT64_C(1 << 20),
+	new_blk_count = ALIGN((uint64_t)new_msize * (uint64_t)_1MB,
 	                      vdi.header.disk.blk_size) / vdi.header.disk.blk_size;
 	if (resize_confirmation(&vdi, fin, fout, new_blk_count) != SUCCESS) {
 		puts("Resize aborted.");
@@ -247,8 +247,8 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 	printf("\nDisk size will change\n"
 	       "from %21"PRIu64" bytes (%15"PRIu64" MB)\n"
 	       "to   %21"PRIu64" bytes (%15"PRIu64" MB)\n",
-	       vdi->header.disk.size, vdi->header.disk.size >> 20,
-	       disk_size(vdi, new_blk_count), disk_size(vdi, new_blk_count) >> 20);
+	       vdi->header.disk.size, vdi->header.disk.size / _1MB,
+	       disk_size(vdi, new_blk_count), disk_size(vdi, new_blk_count) / _1MB);
 	puts("");
 	if (same_file) {
 		puts("Resize operation will be performed in-place.");
