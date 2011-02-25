@@ -51,8 +51,8 @@ static inline uint32_t data_offset(vdi_start_t *vdi, uint32_t blk_count);
 static inline uint64_t disk_size(vdi_start_t *vdi, uint32_t blk_count);
 static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
                          uint32_t new_blk_count);
-static void fix_block_allocation_map(vdi_start_t *vdi, int fd,
-                                     uint32_t new_blk_count);
+static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout,
+                                        uint32_t new_blk_count);
 static void update_header(vdi_start_t *vdi, int fd, uint32_t new_blk_count);
 static int resize(vdi_start_t *vdi, int fin, int fout, uint32_t new_blk_count);
 
@@ -358,8 +358,8 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 	}
 }
 
-static void fix_block_allocation_map(vdi_start_t *vdi, int fd,
-                                     uint32_t new_blk_count)
+static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout,
+                                        uint32_t new_blk_count)
 {
 	uint32_t i, j;
 	vdi_bam_entry_t fill[FILL_COUNT];
@@ -368,22 +368,22 @@ static void fix_block_allocation_map(vdi_start_t *vdi, int fd,
 	                               VDI_BAM_ENTRY_SIZE;
 
 	puts(":: fixing block allocation map");
-	lseek(fd, vdi->header.offset.bam, SEEK_SET);
+	lseek(fout, vdi->header.offset.bam, SEEK_SET);
 
 	for (i = 0; i < (new_blk_count & -FILL_COUNT); i += FILL_COUNT) {
 		for (j = 0; j < FILL_COUNT; j++)
 			fill[j] = i + j;
-		write(fd, fill, FILL_COUNT * VDI_BAM_ENTRY_SIZE);
+		write(fout, fill, FILL_COUNT * VDI_BAM_ENTRY_SIZE);
 	}
 	for (j = i; i < new_blk_count; i++)
 		fill[i - j] = i;
-	write(fd, fill, (new_blk_count - j) * VDI_BAM_ENTRY_SIZE);
+	write(fout, fill, (new_blk_count - j) * VDI_BAM_ENTRY_SIZE);
 
 	memset(fill, 0, FILL_COUNT * VDI_BAM_ENTRY_SIZE);
 	j = ALIGN2(i, FILL_COUNT);
-	write(fd, fill, (j - i) * VDI_BAM_ENTRY_SIZE);
+	write(fout, fill, (j - i) * VDI_BAM_ENTRY_SIZE);
 	for (i = j; i < max_bam_entry_count; i += FILL_COUNT)
-		write(fd, fill, FILL_COUNT * VDI_BAM_ENTRY_SIZE);
+		write(fout, fill, FILL_COUNT * VDI_BAM_ENTRY_SIZE);
 
 	puts(":: block allocation map fixed");
 }
@@ -410,7 +410,7 @@ static int resize(vdi_start_t *vdi, int fin, int fout, uint32_t new_blk_count)
 	ftruncate(fout,
 	          data_offset(vdi, new_blk_count) + disk_size(vdi, new_blk_count));
 	puts(":: disk resized");
-	fix_block_allocation_map(vdi, fout, new_blk_count);
+	update_block_allocation_map(vdi, fin, fout, new_blk_count);
 	update_header(vdi, fout, new_blk_count);
 	print_info_from_struct(vdi, 0);
 	puts(":: final syncing");
