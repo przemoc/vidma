@@ -1,5 +1,17 @@
 * What's new
 
+- Resizing dynamic VDI files is finally supported!
+
+  First expanding will (almost) always move blocks, but next ones will do it
+  only if you cross 255 GB boundary, and again for ~512 GB, etc. In future it
+  will be fixed, i.e. all block moving will be avoided for second and further
+  resizes if block size equals multiple of 1 megabyte (I haven't seen any
+  image "breaking" this rule in the wild, but it's possible).
+
+  Even shrinking is possible, but only if does not involve discarding of
+  allocated blocks. In future it will be also fixed with implementation of
+  block linearization.
+
 * What's new in version 0.0.2 (2011-02-22)
 
 - Many restrictive assumptions about supported VDI files has been removed.

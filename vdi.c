@@ -201,8 +201,8 @@ static int check_assumptions(vdi_start_t *vdi)
 		     " are not supported.");
 		return FAILURE;
 	}
-	if (vdi->header.type != VDI_FIXED) {
-		puts("ERROR   Non fixed-size VDI images are not supported yet.");
+	if (vdi->header.type != VDI_FIXED && vdi->header.type != VDI_DYNAMIC) {
+		puts("ERROR   Non dynamic/fixed VDI images are not supported yet.");
 		return FAILURE;
 	}
 
