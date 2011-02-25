@@ -51,9 +51,8 @@ static inline uint32_t data_offset(vdi_start_t *vdi, uint32_t blk_count);
 static inline uint64_t disk_size(vdi_start_t *vdi, uint32_t blk_count);
 static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
                          uint32_t new_blk_count);
-static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout,
-                                        uint32_t new_blk_count);
-static void update_header(vdi_start_t *vdi, int fd, uint32_t new_blk_count);
+static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout);
+static void update_header(vdi_start_t *vdi, int fd);
 static int resize(vdi_start_t *vdi, int fin, int fout, uint32_t new_blk_count);
 
 /* ==== Exposed functions definitions ======================================= */
@@ -356,28 +355,33 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 			       ((uint64_t)b2m * (uint64_t)bs) / (end - start)
 			      );
 	}
+
+	vdi->header.offset.data = data_offset(vdi, new_blk_count);
+	vdi->header.disk.size = disk_size(vdi, new_blk_count);
+	vdi->header.disk.blk_count = new_blk_count;
+	vdi->header.disk.blk_count_alloc = b2m;
 }
 
-static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout,
-                                        uint32_t new_blk_count)
+static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout)
 {
 	uint32_t i, j;
 	vdi_bam_entry_t fill[FILL_COUNT];
-	uint32_t max_bam_entry_count = (data_offset(vdi, new_blk_count) -
+	uint32_t blk_count = vdi->header.disk.blk_count;
+	uint32_t max_bam_entry_count = (vdi->header.offset.data -
 	                                vdi->header.offset.bam) /
 	                               VDI_BAM_ENTRY_SIZE;
 
 	puts(":: fixing block allocation map");
 	lseek(fout, vdi->header.offset.bam, SEEK_SET);
 
-	for (i = 0; i < (new_blk_count & -FILL_COUNT); i += FILL_COUNT) {
+	for (i = 0; i < (blk_count & -FILL_COUNT); i += FILL_COUNT) {
 		for (j = 0; j < FILL_COUNT; j++)
 			fill[j] = i + j;
 		write(fout, fill, FILL_COUNT * VDI_BAM_ENTRY_SIZE);
 	}
-	for (j = i; i < new_blk_count; i++)
+	for (j = i; i < blk_count; i++)
 		fill[i - j] = i;
-	write(fout, fill, (new_blk_count - j) * VDI_BAM_ENTRY_SIZE);
+	write(fout, fill, (blk_count - j) * VDI_BAM_ENTRY_SIZE);
 
 	memset(fill, 0, FILL_COUNT * VDI_BAM_ENTRY_SIZE);
 	j = ALIGN2(i, FILL_COUNT);
@@ -385,16 +389,14 @@ static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout,
 	for (i = j; i < max_bam_entry_count; i += FILL_COUNT)
 		write(fout, fill, FILL_COUNT * VDI_BAM_ENTRY_SIZE);
 
+	vdi->header.disk.blk_count_alloc = blk_count;
+
 	puts(":: block allocation map fixed");
 }
 
-static void update_header(vdi_start_t *vdi, int fd, uint32_t new_blk_count)
+static void update_header(vdi_start_t *vdi, int fd)
 {
 	puts(":: updating header");
-	vdi->header.offset.data = data_offset(vdi, new_blk_count);
-	vdi->header.disk.size = disk_size(vdi, new_blk_count);
-	vdi->header.disk.blk_count = new_blk_count;
-	vdi->header.disk.blk_count_alloc = new_blk_count;
 	/* VB will fix lchs section */
 	vdi->header.lchs.cylinders = 0;
 	vdi->header.lchs.heads = 0;
@@ -407,11 +409,12 @@ static int resize(vdi_start_t *vdi, int fin, int fout, uint32_t new_blk_count)
 {
 	puts(":: mission started");
 	rewrite_data(vdi, fin, fout, new_blk_count);
+	update_block_allocation_map(vdi, fin, fout);
 	ftruncate(fout,
-	          data_offset(vdi, new_blk_count) + disk_size(vdi, new_blk_count));
+	          vdi->header.offset.data +
+	          disk_size(vdi, vdi->header.disk.blk_count_alloc));
 	puts(":: disk resized");
-	update_block_allocation_map(vdi, fin, fout, new_blk_count);
-	update_header(vdi, fout, new_blk_count);
+	update_header(vdi, fout);
 	print_info_from_struct(vdi, 0);
 	puts(":: final syncing");
 	fsync(fout);
