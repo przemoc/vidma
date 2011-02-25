@@ -52,6 +52,7 @@ static inline uint64_t disk_size(vdi_start_t *vdi, uint32_t blk_count);
 static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
                          uint32_t new_blk_count);
 static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout);
+static void update_file_size(vdi_start_t *vdi, int fd);
 static void update_header(vdi_start_t *vdi, int fd);
 static int resize(vdi_start_t *vdi, int fin, int fout, uint32_t new_blk_count);
 
@@ -393,6 +394,15 @@ static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout)
 	puts(":: block allocation map fixed");
 }
 
+static void update_file_size(vdi_start_t *vdi, int fd)
+{
+	puts(":: updating file size");
+	ftruncate(fd,
+	          vdi->header.offset.data +
+	          disk_size(vdi, vdi->header.disk.blk_count_alloc));
+	puts(":: file size updated");
+}
+
 static void update_header(vdi_start_t *vdi, int fd)
 {
 	puts(":: updating header");
@@ -409,10 +419,7 @@ static int resize(vdi_start_t *vdi, int fin, int fout, uint32_t new_blk_count)
 	puts(":: mission started");
 	rewrite_data(vdi, fin, fout, new_blk_count);
 	update_block_allocation_map(vdi, fin, fout);
-	ftruncate(fout,
-	          vdi->header.offset.data +
-	          disk_size(vdi, vdi->header.disk.blk_count_alloc));
-	puts(":: disk resized");
+	update_file_size(vdi, fout);
 	update_header(vdi, fout);
 	print_info_from_struct(vdi, 0);
 	puts(":: final syncing");
