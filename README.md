@@ -74,7 +74,7 @@ Stages:
 ### Hacking
 
 Don't waste your time until vidma will be close to beta stage. I mean it.  
-I am aware of many shortcomings (some are listed in [issues][2] w/ todo label)
+I am aware of many shortcomings (some are listed in [issues][1] w/ todo label)
 and they will be eventually addressed (in no particular order).
 
 I won't accept any pull request before releasing version 0.2.0. ;-)
