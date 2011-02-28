@@ -1,56 +1,56 @@
 vidma - Virtual Disks Manipulator
 =================================
 
-Utility for manipulating virtual disk images.
-
-
-Features
---------
-
-* resizing fixed-size images
-* operations can be done in-place
+vidma is a utility for manipulating virtual disk images. It can show basic
+information about the image or resize it. Resizing is done by in-place
+modification of a file holding the image or by creating modified copy of such
+file.
 
 
 Supported formats
 -----------------
 
-* VDI - Virtual Disk Image, used mostly by VirtualBox
+  * _VDI - Virtual Disk Image_  
+    Format introduced by VirtualBox and mostly used by VirtualBox. It has a few
+    variants, but only two types, fixed and dynamic, are handled by `vidma`.
 
 
 Requirements
 ------------
 
 * little-endian machine, e.g. x86, x86-64
-* Windows or POSIX OS, e.g. Linux
+* Windows or POSIX OS, e.g. BSD, Linux, Mac OS X
 
 
 Links
 -----
 
-* [VirtualBox Forum topic][1] (contains example of usage)
-
-  [1]: http://tinyurl.com/vbox-vidma
+* [VirtualBox Forum topic](http://tinyurl.com/vbox-vidma)  
+  (contains example of usage)
 
 
 Bugs
 ----
 
-If you find any bug, then please create new issue in [GitHub][2] and describe
-the problem there, unless someone did it before you.
+If you find any bug, then please create a new issue in the project's
+[GitHub page][1] and describe the problem there, unless someone already did it
+before you.
 
-  [2]: https://github.com/przemoc/vidma/issues
+  [1]: https://github.com/przemoc/vidma/issues
 
 Remember to provide following information:
 
 * What system do you have?  
   (`uname -a`, `lsb_release -drc`)
-* What gcc version are you using?  
-  (`gcc -v`)
+* What compiler do you use? (if you have built `vidma` manually)  
+  (`cc -v`)
+* What `vidma` version are you using?  
+  (first line of `vidma` output)
 * What have you done?  
-  (run `history` and check the command-line for compiling and running vidma)
-* If problem regards corrupted image, then paste information from vidma about
-  the original image and the one after failed modification.  
-  (`vidma original_image`, `vidma modified_image`)
+  (run `history` and check the commands used to compile and run vidma)
+* If problem regards corrupted image, then paste information about the original
+  image and the one after failed modification.  
+  (`vidma original_image_file`, `vidma modified_image_file`)
 
 
 Development

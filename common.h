@@ -75,7 +75,9 @@ int same_file_behind_fds_win(int fd1, int fd2);
 
 #else /* !__WIN32__ ~= POSIX */
 
+# ifndef O_BINARY
 # define O_BINARY 0
+# endif
 
 int same_file_behind_fds_posix(int fd1, int fd2);
 

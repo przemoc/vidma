@@ -1,0 +1,77 @@
+vidma(1) -- Virtual Disks Manipulator
+=====================================
+
+## SYNOPSIS
+
+`vidma` <INPUT_FILE>  
+`vidma` <INPUT_FILE> <NEW_SIZE_IN_MB> [<OUTPUT_FILE>]
+
+## DESCRIPTION
+
+**vidma** is a utility for manipulating virtual disk images. It can show basic
+information about the image or resize it. Resizing is done by in-place
+modification of a file holding the image or by creating modified copy of such
+file.
+
+If you provide only <INPUT_FILE> argument, then `vidma` checks whether this
+file is a virtual disk image, i.e. has one of supported [FORMATS][], and shows
+information about it.
+
+Giving additionally <NEW_SIZE_IN_MB> value, which should be a positive integer,
+you tell `vidma` to perform a _resize_ operation on the <INPUT_FILE>. Unless
+you provide <OUTPUT_FILE>, resizing will be performed in-place.
+<NEW_SIZE_IN_MB> is the new desired size of virtual disk, using megabyte
+(1048576 bytes) as a unit.
+
+By specifying <OUTPUT_FILE> you prevent `vidma` from modifying <INPUT_FILE>.
+<OUTPUT_FILE> becomes then an appropriately modified copy of <INPUT_FILE>.
+
+With no arguments, `vidma` displays its version and usage information.
+
+## FORMATS
+
+The `vidma` command expects <INPUT_FILE> to be valid virtual disk image in one
+of currently supported formats:
+
+  * _VDI - Virtual Disk Image_  
+    Format introduced by VirtualBox and mostly used by VirtualBox. It has a few
+    variants, but only two types, fixed and dynamic, are handled by `vidma`.
+
+## BUGS
+
+There is no free space checking before resizing and there is no error handling.
+This means you won't notice a failure if it will happen. Obviously this has to
+be fixed in future versions.
+
+To reduce possible damages of in-place operation **ALWAYS BACKUP YOUR IMAGE**
+or do not use in-place operations at all by providing <OUTPUT_FILE> every time.
+
+## AUTHOR
+
+Written by Przemyslaw Pawelczyk.
+
+## REPORTING BUGS
+
+If you find any bug, then please create a new issue in the project's
+[GitHub page][1] and describe the problem there, unless someone already did it
+before you.
+
+  [1]: https://github.com/przemoc/vidma/issues
+
+Remember to provide following information:
+
+* What system do you have?  
+  (`uname -a`, `lsb_release -drc`)
+* What compiler do you use? (if you have built `vidma` manually)  
+  (`cc -v`)
+* What `vidma` version are you using?  
+  (first line of `vidma` output)
+* What have you done?  
+  (run `history` and check the commands used to compile and run vidma)
+* If problem regards corrupted image, then paste information about the original
+  image and the one after failed modification.  
+  (`vidma original_image_file`, `vidma modified_image_file`)
+
+## COPYRIGHT
+
+Copyright (C) 2009-2011 Przemyslaw Pawelczyk <<przemoc@gmail.com>>

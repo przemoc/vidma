@@ -1,0 +1,89 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "VIDMA" "1" "February 2011" "" ""
+.
+.SH "NAME"
+\fBvidma\fR \- Virtual Disks Manipulator
+.
+.SH "SYNOPSIS"
+\fBvidma\fR \fIINPUT_FILE\fR
+.
+.br
+\fBvidma\fR \fIINPUT_FILE\fR \fINEW_SIZE_IN_MB\fR [\fIOUTPUT_FILE\fR]
+.
+.SH "DESCRIPTION"
+\fBvidma\fR is a utility for manipulating virtual disk images\. It can show basic information about the image or resize it\. Resizing is done by in\-place modification of a file holding the image or by creating modified copy of such file\.
+.
+.P
+If you provide only \fIINPUT_FILE\fR argument, then \fBvidma\fR checks whether this file is a virtual disk image, i\.e\. has one of supported \fIFORMATS\fR, and shows information about it\.
+.
+.P
+Giving additionally \fINEW_SIZE_IN_MB\fR value, which should be a positive integer, you tell \fBvidma\fR to perform a \fIresize\fR operation on the \fIINPUT_FILE\fR\. Unless you provide \fIOUTPUT_FILE\fR, resizing will be performed in\-place\. \fINEW_SIZE_IN_MB\fR is the new desired size of virtual disk, using megabyte (1048576 bytes) as a unit\.
+.
+.P
+By specifying \fIOUTPUT_FILE\fR you prevent \fBvidma\fR from modifying \fIINPUT_FILE\fR\. \fIOUTPUT_FILE\fR becomes then an appropriately modified copy of \fIINPUT_FILE\fR\.
+.
+.P
+With no arguments, \fBvidma\fR displays its version and usage information\.
+.
+.SH "FORMATS"
+The \fBvidma\fR command expects \fIINPUT_FILE\fR to be valid virtual disk image in one of currently supported formats:
+.
+.IP "\(bu" 4
+\fIVDI \- Virtual Disk Image\fR
+.
+.br
+Format introduced by VirtualBox and mostly used by VirtualBox\. It has a few variants, but only two types, fixed and dynamic, are handled by \fBvidma\fR\.
+.
+.IP "" 0
+.
+.SH "BUGS"
+There is no free space checking before resizing and there is no error handling\. This means you won\'t notice a failure if it will happen\. Obviously this has to be fixed in future versions\.
+.
+.P
+To reduce possible damages of in\-place operation \fBALWAYS BACKUP YOUR IMAGE\fR or do not use in\-place operations at all by providing \fIOUTPUT_FILE\fR every time\.
+.
+.SH "AUTHOR"
+Written by Przemyslaw Pawelczyk\.
+.
+.SH "REPORTING BUGS"
+If you find any bug, then please create a new issue in the project\'s GitHub page \fIhttps://github\.com/przemoc/vidma/issues\fR and describe the problem there, unless someone already did it before you\.
+.
+.P
+Remember to provide following information:
+.
+.IP "\(bu" 4
+What system do you have?
+.
+.br
+(\fBuname \-a\fR, \fBlsb_release \-drc\fR)
+.
+.IP "\(bu" 4
+What compiler do you use? (if you have built \fBvidma\fR manually)
+.
+.br
+(\fBcc \-v\fR)
+.
+.IP "\(bu" 4
+What \fBvidma\fR version are you using?
+.
+.br
+(first line of \fBvidma\fR output)
+.
+.IP "\(bu" 4
+What have you done?
+.
+.br
+(run \fBhistory\fR and check the commands used to compile and run vidma)
+.
+.IP "\(bu" 4
+If problem regards corrupted image, then paste information about the original image and the one after failed modification\.
+.
+.br
+(\fBvidma original_image_file\fR, \fBvidma modified_image_file\fR)
+.
+.IP "" 0
+.
+.SH "COPYRIGHT"
+Copyright (C) 2009\-2011 Przemyslaw Pawelczyk <\fIprzemoc@gmail\.com\fR>
