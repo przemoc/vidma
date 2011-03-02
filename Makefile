@@ -13,7 +13,7 @@ endif
 
 VIDMA_VERSION := $(shell \
 	git describe --tags --dirty 2>/dev/null || \
-	awk "/\* What's new in version /"'{print "v" $$6 ((NR!=1)?"+":"");nextfile}' NEWS 2>/dev/null || \
+	awk "/\* What's new in version /"'{print "v" $$6 ((NR!=1)?"+":"");exit}' NEWS 2>/dev/null || \
 	echo unknown)
 
 CFLAGS += -Wall -O2
