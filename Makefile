@@ -1,5 +1,5 @@
 DOCS := AUTHORS NEWS README.md
-OBJS := main.o vdi.o
+OBJS := main.o vdi.o ui-cli.o
 MAN1 := vidma.1
 OUT := vidma
 
@@ -34,8 +34,9 @@ INSTALL_EXEC := $(INSTALL) -m 0755
 
 all: $(OUT)
 
-main.o: FORCE main.c common.h
-vdi.o: vdi.c vdi.h common.h
+main.o: FORCE main.c vdi.h ui.h common.h
+vdi.o: vdi.c vdi.h vd.h ui.h common.h
+ui-cli.o: ui-cli.c ui.h common.h
 
 $(OUT): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)

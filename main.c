@@ -18,6 +18,7 @@
 #include <sys/stat.h>
 
 #include "common.h"
+#include "ui.h"
 #include "vdi.h"
 
 const char vidma_header_string[] =
@@ -28,6 +29,8 @@ const char vidma_usage_string[] =
 	"Usage: %s INPUT_FILE [NEW_SIZE_IN_MB [OUTPUT_FILE]]\n"
 	"\n"
 	"USE AT YOUR OWN RISK! NO WARRANTY!\n";
+
+ui_ops_t *ui = &ui_cli;
 
 int litle_endian_test()
 {

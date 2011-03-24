@@ -20,6 +20,7 @@
 
 #include "common.h"
 #include "vdi.h"
+#include "ui.h"
 
 /* ==== Exposed functions prototypes ======================================== */
 
@@ -95,7 +96,7 @@ static int vdi_resize(int fin, int fout, uint32_t new_msize)
 	new_blk_count = ALIGN((uint64_t)new_msize * (uint64_t)_1MB,
 	                      vdi.header.disk.blk_size) / vdi.header.disk.blk_size;
 	if (resize_confirmation(&vdi, fin, fout, new_blk_count) != SUCCESS) {
-		puts("Resize aborted.");
+		ui->log("Resize aborted.\n");
 		return FAILURE;
 	}
 
@@ -104,14 +105,14 @@ static int vdi_resize(int fin, int fout, uint32_t new_msize)
 
 /* ==== Defines and Macros ================================================== */
 
-#define PRINT(f,a...)  printf("%-*s = " f, 32, a)
+#define PRINT(f,a...)  ui->log("%-*s = " f, 32, a)
 #define PRINTU32(v,i)  PRINT("%08x %u\n", #i, (uint32_t)v->i, (uint32_t)v->i)
 #define PRINTSTR(v,i)  PRINT("%s\n", #i, (char *)v->i)
 #define PRINTUUID(v,i) \
 	do { \
 		PRINT("", #i); \
 		print_uuid(&(v->i)); \
-		puts(""); \
+		ui->log("\n"); \
 	} while (0)
 #define PRINTU64(v,i) \
 	PRINT("%016"PRIx64" %"PRIu64"\n", #i, (uint64_t)v->i, (uint64_t)v->i)
@@ -123,12 +124,12 @@ static int vdi_resize(int fin, int fout, uint32_t new_msize)
 
 static void print_uuid(vdi_uuid_t *uuid)
 {
-	printf("%08x-%04hx-%04hx-%02x%02x-%02x%02x%02x%02x%02x%02x",
-	       uuid->part1, uuid->part2, uuid->part3,
-	       uuid->part4[0], uuid->part4[1],
-	       uuid->part5[0], uuid->part5[1], uuid->part5[2],
-	       uuid->part5[3], uuid->part5[4], uuid->part5[5]
-	      );
+	ui->log("%08x-%04hx-%04hx-%02x%02x-%02x%02x%02x%02x%02x%02x",
+	        uuid->part1, uuid->part2, uuid->part3,
+	        uuid->part4[0], uuid->part4[1],
+	        uuid->part5[0], uuid->part5[1], uuid->part5[2],
+	        uuid->part5[3], uuid->part5[4], uuid->part5[5]
+	       );
 }
 
 static void print_info_from_struct(vdi_start_t *v, int full)
@@ -185,24 +186,24 @@ static void write_start(int fd, vdi_start_t *vdi)
 static int check_assumptions(vdi_start_t *vdi)
 {
 	if (vdi->version != ((1 << 16) | 1)) {
-		puts("ERROR   Not supported VDI format version.");
+		ui->log("ERROR   Not supported VDI format version.\n");
 		return FAILURE;
 	}
 	if (vdi->header.disk.blk_extra_data != 0) {
-		puts("ERROR   Blocks with extra data are not supported yet.");
+		ui->log("ERROR   Blocks with extra data are not supported yet.\n");
 		return FAILURE;
 	}
 	if (vdi->header.offset.bam > vdi->header.offset.data) {
-		puts("ERROR   Block allocation map following data is not supported.");
+		ui->log("ERROR   Block allocation map following data is not supported.\n");
 		return FAILURE;
 	}
 	if (vdi->header.lchs.sector_size != VDI_SECTOR_SIZE) {
-		puts("ERROR   Sector sizes other than " Q(VDI_SECTOR_SIZE)
-		     " are not supported.");
+		ui->log("ERROR   Sector sizes other than " Q(VDI_SECTOR_SIZE)
+		        " are not supported.\n");
 		return FAILURE;
 	}
 	if (vdi->header.type != VDI_FIXED && vdi->header.type != VDI_DYNAMIC) {
-		puts("ERROR   Non dynamic/fixed VDI images are not supported yet.");
+		ui->log("ERROR   Non dynamic/fixed VDI images are not supported yet.\n");
 		return FAILURE;
 	}
 
@@ -221,19 +222,19 @@ static int check_correctness(vdi_start_t *vdi)
 	int errors = 0;
 
 	if (bam_beg < start_end)
-		errors += puts("ERROR   BAM overlaps file header.") >= 0;
+		errors += ui->log("ERROR   BAM overlaps file header.\n") >= 0;
 	if (data_beg < start_end)
-		errors += puts("ERROR   Data overlaps file header.") >= 0;
+		errors += ui->log("ERROR   Data overlaps file header.\n") >= 0;
 	if (!(data_beg >= bam_end && data_end >= bam_end) &&
 	    !(bam_beg >= data_end && bam_end >= data_end))
-		errors += puts("ERROR   BAM overlaps data.") >= 0;
+		errors += ui->log("ERROR   BAM overlaps data.\n") >= 0;
 	if (vdi->header.disk.blk_count_alloc > vdi->header.disk.blk_count)
-		errors += puts("ERROR   Insane number of allocated blocks.") >= 0;
+		errors += ui->log("ERROR   Insane number of allocated blocks.\n") >= 0;
 	if (disksize != vdi->header.disk.size)
-		errors += printf("ERROR   block size (%u), block count (%u) "
-		                 "and disk size (%"PRIu64") mismatch.\n",
-		                 vdi->header.disk.blk_size, vdi->header.disk.blk_count,
-		                 vdi->header.disk.size) >= 0;
+		errors += ui->log("ERROR   block size (%u), block count (%u) "
+		                  "and disk size (%"PRIu64") mismatch.\n",
+		                  vdi->header.disk.blk_size, vdi->header.disk.blk_count,
+		                  vdi->header.disk.size) >= 0;
 
 	return !errors
 	       ? SUCCESS : FAILURE;
@@ -272,60 +273,55 @@ static void find_last_blocks(vdi_start_t *vdi, int fd,
 static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
                                uint32_t new_blk_count)
 {
-	char buf[4];
 	uint32_t last_blk_no = 0;
 	uint32_t last_blk_pos = 0;
 	uint32_t min_blk_count = 1;
 	int32_t delta = data_offset(vdi, new_blk_count) - vdi->header.offset.data;
 	int same_file = same_file_behind_fds(fin, fout) == SUCCESS;
 
-	printf("Requested disk resize\n"
-	       "from %21u block(s)\nto   %21u block(s)\n",
-	       vdi->header.disk.blk_count, new_blk_count);
-	printf("(each block has %10u bytes)\n",
-	       vdi->header.disk.blk_size);
+	ui->log("Requested disk resize\n"
+	        "from %21u block(s)\nto   %21u block(s)\n"
+	        "(each block has %10u bytes)\n",
+	        vdi->header.disk.blk_count, new_blk_count,
+	        vdi->header.disk.blk_size);
 
 	if (vdi->header.type == VDI_DYNAMIC) {
 		find_last_blocks(vdi, fin, &last_blk_no, &last_blk_pos);
 		min_blk_count = max_u32(last_blk_no, last_blk_pos) + 1;
 		if (new_blk_count < min_blk_count) {
-			printf("But minimal possible block count equals\n"
-			       "     %21u block(s)\n",
-			       min_blk_count);
+			ui->log("But minimal possible block count equals\n"
+			        "     %21u block(s)\n",
+			        min_blk_count);
 			return FAILURE;
 		}
 	}
 
-	printf("\nDisk size will change\n"
-	       "from %21"PRIu64" bytes (%15"PRIu64" MB)\n"
-	       "to   %21"PRIu64" bytes (%15"PRIu64" MB)\n",
-	       vdi->header.disk.size, vdi->header.disk.size / _1MB,
-	       disk_size(vdi, new_blk_count), disk_size(vdi, new_blk_count) / _1MB);
-	puts("");
+	ui->log("\nDisk size will change\n"
+	        "from %21"PRIu64" bytes (%15"PRIu64" MB)\n"
+	        "to   %21"PRIu64" bytes (%15"PRIu64" MB)\n"
+	        "\n",
+	        vdi->header.disk.size, vdi->header.disk.size / _1MB,
+	        disk_size(vdi, new_blk_count), disk_size(vdi, new_blk_count) / _1MB);
 	if (same_file) {
-		puts("Resize operation will be performed in-place.");
+		ui->log("Resize operation will be performed in-place.\n");
 		if (delta)
-			puts("WARNING All allocated blocks require moving.\n"
-			     "        In case of fail DATA LOSS is highly POSSIBLE!\n"
-			     "        Think twice before continuing!");
+			ui->log("WARNING All allocated blocks require moving.\n"
+			        "        In case of fail DATA LOSS is highly POSSIBLE!\n"
+			        "        Think twice before continuing!\n");
 		else
-			puts("CAUTION Only disk metadata will be modified.\n"
-			     "        In case of fail data loss is highly unlikely,\n"
-			     "        but image METADATA CAN BE CORRUPTED!");
+			ui->log("CAUTION Only disk metadata will be modified.\n"
+			        "        In case of fail data loss is highly unlikely,\n"
+			        "        but image METADATA CAN BE CORRUPTED!\n");
 		if (vdi->header.disk.size > disk_size(vdi, new_blk_count))
-			puts("WARNING Shrinking disk in-place means\n"
-			     "        IRRETRIEVABLY LOSING DATA KEPT BEYOND NEW SIZE!");
+			ui->log("WARNING Shrinking disk in-place means\n"
+			        "        IRRETRIEVABLY LOSING DATA KEPT BEYOND NEW SIZE!\n");
 	} else {
-		puts("Resize operation in fact will create resized copy of the image.");
-		puts("NOTE    UUID of the new image will be the same as old one.");
-		puts("NOTE    Input file is safe and won't be modified.");
+		ui->log("Resize operation in fact will create resized copy of the image.\n");
+		ui->log("NOTE    UUID of the new image will be the same as old one.\n");
+		ui->log("NOTE    Input file is safe and won't be modified.\n");
 	}
 
-	printf("\nAre you sure you want to continue? (y/N) ");
-	fgets(buf, sizeof(buf), stdin);
-
-	return (buf[0] == 'y' || buf[0] == 'Y') && buf[1] == '\n'
-	       ? SUCCESS : FAILURE;
+	return ui->yesno("Are you sure you want to continue?");
 }
 
 static inline uint32_t min_data_offset(vdi_start_t *vdi, uint32_t blk_count)
@@ -364,47 +360,48 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 	lseek(fout, data_offset(vdi, new_blk_count), SEEK_SET);
 
 	if (delta || !same_file) {
-		if (same_file)
-			puts(":: moving data");
-		else
-			puts(":: copying data");
+		ui->next_step(same_file ? "Moving blocks" : "Copying blocks");
+		ui->set_step_prog_max(blocks);
 		buffer = malloc(bs + delta * (delta > 0));
 		start = gettimeofday_us();
 		if (delta > 0) {
 			read(fin, buffer + bs, delta);
 			for (i = 1; i <= blocks; i++) {
-				printf("\r:: block: %u / %u", i, blocks);
+				ui->set_step_prog_val(i);
 				memcpy(buffer, buffer + bs, delta);
 				read(fin, buffer + delta, bs);
 				write(fout, buffer, bs);
 			}
 		} else
 			for (i = 1; i <= blocks; i++) {
-				printf("\r:: block: %u / %u", i, blocks);
+				ui->set_step_prog_val(i);
 				read(fin, buffer, bs);
 				write(fout, buffer, bs);
 			}
-		puts("\n:: syncing");
+		ui->log("Syncing\n");
 		fsync(fout);
 		end = gettimeofday_us();
 		free(buffer);
 		if (same_file)
-			printf(
-			       ":: data moved (%u blocks by %u bytes "
-			       "in %"PRIu64" ms = ~%"PRIu64" B/us)\n",
-			       blocks,
-			       abs(delta),
-			       (end - start) / 1000,
-			       ((uint64_t)blocks * (uint64_t)bs) / (end - start)
-			      );
+			ui->log(
+			        "Data moved (%u blocks by %u bytes "
+			        "in %"PRIu64" ms = ~%"PRIu64" B/us)\n",
+			        blocks,
+			        abs(delta),
+			        (end - start) / 1000,
+			        ((uint64_t)blocks * (uint64_t)bs) / (end - start)
+			       );
 		else
-			printf(
-			       ":: data copied (%u blocks "
-			       "in %"PRIu64" ms = ~%"PRIu64" B/us)\n",
-			       blocks,
-			       (end - start) / 1000,
-			       ((uint64_t)blocks * (uint64_t)bs) / (end - start)
-			      );
+			ui->log(
+			        "Data copied (%u blocks "
+			        "in %"PRIu64" ms = ~%"PRIu64" B/us)\n",
+			        blocks,
+			        (end - start) / 1000,
+			        ((uint64_t)blocks * (uint64_t)bs) / (end - start)
+			       );
+	} else {
+		ui->next_step("No need to move blocks");
+		ui->set_step_prog_val(1);
 	}
 
 	vdi->header.offset.data = data_offset(vdi, new_blk_count);
@@ -432,7 +429,7 @@ static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout,
 	                     VDI_BAM_ENTRY_SIZE;
 	int same_file = (same_file_behind_fds(fin, fout) == SUCCESS);
 
-	puts(":: updating block allocation map");
+	ui->next_step("Updating block allocation map");
 
 	/* Copy old BAM if needed. */
 	if (!same_file) {
@@ -496,44 +493,45 @@ static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout,
 		write(fout, fill, VDI_BAM_SIZE(FILL_COUNT));
 	write(fout, fill, VDI_BAM_SIZE(total_end - i));
 
-	puts(":: syncing");
+	ui->set_step_prog_val(1);
+	ui->log("Syncing\n");
 	fsync(fout);
-	puts(":: block allocation map updated");
 }
 
 static void update_file_size(vdi_start_t *vdi, int fd)
 {
-	puts(":: updating file size");
+	ui->next_step("Updating file size");
 	ftruncate(fd,
 	          vdi->header.offset.data +
 	          disk_size(vdi, vdi->header.disk.blk_count_alloc));
-	puts(":: syncing");
+	ui->set_step_prog_val(1);
+	ui->log("Syncing\n");
 	fsync(fd);
-	puts(":: file size updated");
 }
 
 static void update_header(vdi_start_t *vdi, int fd)
 {
-	puts(":: updating header");
+	ui->next_step("Updating header");
 	/* VB will fix lchs section */
 	vdi->header.lchs.cylinders = 0;
 	vdi->header.lchs.heads = 0;
 	vdi->header.lchs.sectors = 0;
 	write_start(fd, vdi);
-	puts(":: syncing");
+	ui->set_step_prog_val(1);
+	ui->log("Syncing\n");
 	fsync(fd);
-	puts(":: header updated");
 }
 
 static int resize(vdi_start_t *vdi, int fin, int fout, uint32_t new_blk_count)
 {
-	puts(":: mission started");
+	ui->start_op("Resize", 4);
 	rewrite_data(vdi, fin, fout, new_blk_count);
 	update_block_allocation_map(vdi, fin, fout, new_blk_count);
 	update_file_size(vdi, fout);
 	update_header(vdi, fout);
+	ui->end_op();
+	ui->log("\n");
 	print_info_from_struct(vdi, 0);
-	puts(":: mission accomplished");
 
 	return SUCCESS;
 }
