@@ -11,10 +11,14 @@ else
 	OBJS += common_posix.o
 endif
 
+SRCDIR := .
+NOT_IN_SRCDIR := $(shell test ! . -ef $(SRCDIR) && echo 1)
+GIT_WORK_TREE := $(SRCDIR)
+
 VIDMA_VERSION := $(shell \
-	git describe --tags --dirty 2>/dev/null || \
-	awk "/\* What's new in version /"'{print "v" $$6 ((NR!=1)?"+":"");exit}' NEWS 2>/dev/null || \
-	echo unknown)
+	GIT_WORK_TREE="$(GIT_WORK_TREE)" git describe --tags --dirty 2>/dev/null || \
+	awk "/\* What's new in version /"'{print "v" $$6 ((NR!=1)?"+":"");exit}' $(SRCDIR)/NEWS 2>/dev/null || \
+	echo unknown )
 
 CFLAGS += -Wall -O2
 override CFLAGS += -std=c99 -Wno-variadic-macros \
@@ -32,6 +36,10 @@ INSTALL := install -o root -g 0
 INSTALL_DATA := $(INSTALL) -m 0644
 INSTALL_EXEC := $(INSTALL) -m 0755
 
+vpath %.c $(SRCDIR)
+vpath %.h $(SRCDIR)
+vpath %.ronn $(SRCDIR)
+
 all: $(OUT)
 
 main.o: FORCE main.c vdi.h ui.h common.h
@@ -42,21 +50,24 @@ $(OUT): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 
 %.1: %.1.ronn
-	ronn -r $<
+	$(if $(shell test -n "$(NOT_IN_SRCDIR)" -a -f $(basename $<) -a ! $(basename $<) -ot $< && echo yes) , \
+		cp  $(basename $<) $@ , \
+		ronn --pipe -r $< >$@ \
+	)
 
 %.1.html: %.1.ronn
-	ronn -5 --style=toc $<
+	ronn -5 --pipe --style=toc $< >$@
 
 clean:
-	$(RM) $(OUT) $(OBJS)
+	$(RM) $(OUT) $(OBJS) $(if $(NOT_IN_SRCDIR),$(MAN1))
 
 install: $(OUT) $(MAN1)
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL_EXEC) $(OUT) $(DESTDIR)$(BINDIR)/$(OUT)
-	$(INSTALL) -d $(DESTDIR)$(DOCDIR)
-	$(INSTALL_DATA) $(DOCS) $(DESTDIR)$(DOCDIR)
 	$(INSTALL) -d $(DESTDIR)$(MANDIR)/man1
-	$(INSTALL_DATA) $(MAN1) $(DESTDIR)$(MANDIR)/man1/$(MAN1)
+	$(INSTALL_DATA) $(SRCDIR)/$(MAN1) $(DESTDIR)$(MANDIR)/man1/$(MAN1)
+	$(INSTALL) -d $(DESTDIR)$(DOCDIR)
+	$(INSTALL_DATA) $(addprefix $(SRCDIR)/,$(DOCS)) $(DESTDIR)$(DOCDIR)
 
 uninstall:
 	$(RM) $(DESTDIR)$(BINDIR)/$(OUT)
