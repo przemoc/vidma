@@ -1,0 +1,86 @@
+#!/bin/sh
+
+# Copyright (C) 2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
+#
+# This software is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2.
+# See <http://www.gnu.org/licenses/gpl-2.0.txt>.
+#
+# This software is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+
+# minimalistic configure-like script
+
+set -e
+
+SRCDIR="$(dirname $0)"
+
+help() {
+	echo \
+"Usage: $0 [OPTION]... [VAR=VALUE]...
+
+To assign environment variables (e.g., CC, CFLAGS...), specify them as
+VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+Defaults for the options are specified in brackets.
+
+Configuration:
+  -h, --help              display this help and exit
+      --srcdir=DIR        find the sources in DIR [configure dir]
+
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [PREFIX]
+
+Fine tuning of the installation directories:
+  --bindir=DIR            user executables [EPREFIX/bin]
+  --datarootdir=DIR       read-only arch.-independent data root [PREFIX/share]
+  --mandir=DIR            man documentation [DATAROOTDIR/man]
+  --docdir=DIR            documentation root [DATAROOTDIR/doc/vidma]
+
+Some influential environment variables:
+  CFLAGS      C compiler flags
+  LDFLAGS     linker flags
+  CPPFLAGS    C/C++/Objective C preprocessor flags
+"
+	exit 0
+}
+
+modify() {
+	if [ -n "$OPTARG" ]; then
+		CMDS="$CMDS/^$1 /"'s#\([^ ]\?\)= .*#\1= '"$OPTARG#;"
+	fi
+}
+
+for OPT in "$@"; do
+	case "$OPT" in
+	*=*)
+		OPTARG="$(expr "$OPT" : '[^=]*=\(.*\)' || true)"
+		;;
+	*)
+		OPTARG=""
+		;;
+	esac
+	case "$OPT" in
+	-h | --help)     help ;;
+	--srcdir=*)      SRCDIR="${OPTARG:-${SRCDIR}}" ;;
+	--prefix=*)      modify PREFIX   ;;
+	--exec-prefix=*) modify EPREFIX  ;;
+	--bindir=*)      modify BINDIR   ;;
+	--datarootdir=*) modify DATADIR  ;;
+	--mandir=*)      modify MANDIR   ;;
+	--docdir=*)      modify DOCDIR   ;;
+	CPPFLAGS=*)      modify CPPFLAGS ;;
+	CFLAGS=*)        modify CFLAGS   ;;
+	LDFLAGS=*)       modify LDFLAGS  ;;
+	esac
+done
+
+OPTARG="$SRCDIR"
+modify SRCDIR
+
+sed "$CMDS" "$SRCDIR/Makefile.in" >Makefile

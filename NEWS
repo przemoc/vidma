@@ -2,6 +2,9 @@
 
 - Messages printed by vidma have been slightly changed.
 
+- Simple configure script has been added. You have to run it before invoking
+  make. Building outside of the source directory is now supported.
+
 * What's new in version 0.0.3a (2011-02-28)
 
 - Manual page has been added.

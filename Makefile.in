@@ -24,6 +24,8 @@ CFLAGS += -Wall -O2
 override CFLAGS += -std=c99 -Wno-variadic-macros \
                    -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=600 \
                    -DVIDMA_VERSION="\"$(VIDMA_VERSION)\""
+CPPFLAGS += 
+LDFLAGS += 
 
 PREFIX := /usr/local
 EPREFIX := $(PREFIX)
@@ -61,6 +63,9 @@ $(OUT): $(OBJS)
 clean:
 	$(RM) $(OUT) $(OBJS) $(if $(NOT_IN_SRCDIR),$(MAN1))
 
+distclean: clean
+	$(RM) Makefile $(MAN1).html
+
 install: $(OUT) $(MAN1)
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL_EXEC) $(OUT) $(DESTDIR)$(BINDIR)/$(OUT)
@@ -76,4 +81,4 @@ uninstall:
 
 FORCE:
 
-.PHONY: all clean install uninstall
+.PHONY: all clean distclean install uninstall
