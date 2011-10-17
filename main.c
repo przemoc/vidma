@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 	fin = open(argv[1], O_RDONLY | O_BINARY);
 
 	for (; *type != NULL; type++) {
-		if ((*type)->ops.check(fin) == SUCCESS) {
+		if ((*type)->ops.detect(fin) == SUCCESS) {
 			fprintf(stderr, "Recognized file format:\n"
 			                "        %s (%s)\n\n", (*type)->name, (*type)->ext);
 			break;

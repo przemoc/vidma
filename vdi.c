@@ -24,7 +24,7 @@
 
 /* ==== Exposed functions prototypes ======================================== */
 
-static int vdi_check(int fd);
+static int vdi_detect(int fd);
 static void vdi_info(int fd);
 static int vdi_resize(int fin, int fout, uint32_t new_msize);
 
@@ -32,7 +32,7 @@ vd_type_t vd_vdi = {
 	.ext = "vdi",
 	.name = "Virtual Disk Image",
 	.ops = {
-		.check      = vdi_check,
+		.detect     = vdi_detect,
 		.info       = vdi_info,
 		.resize     = vdi_resize
 	}
@@ -65,7 +65,7 @@ static int resize(vdi_start_t *vdi, int fin, int fout, uint32_t new_blk_count);
 
 /* ==== Exposed functions definitions ======================================= */
 
-static int vdi_check(int fd)
+static int vdi_detect(int fd)
 {
 	vdi_start_t v;
 

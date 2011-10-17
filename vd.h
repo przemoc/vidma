@@ -17,7 +17,7 @@
 #include <inttypes.h>
 
 typedef struct vd_ops {
-	int (*check)(int);                 /* check(fd) */
+	int (*detect)(int);                /* detect(fd) */
 	void (*info)(int);                 /* info(fd) */
 	int (*resize)(int, int, uint32_t); /* resize(fd_in,fd_out,new_size_in_mb) */
 } vd_ops_t;
