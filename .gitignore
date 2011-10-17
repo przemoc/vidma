@@ -1,3 +1,4 @@
 *.o
 vidma*
 Makefile
+doxygen/

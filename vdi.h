@@ -11,7 +11,11 @@
  * for more details.
  */
 
-/*
+/** \file vdi.h
+ * VDI - Virtual Disk Image.
+ *
+ * Format introduced by VirtualBox and mostly used by it.
+ *
  * VDI consists of 3 areas:
  * - preheader + header (start),
  * - block allocation map (BAM),
@@ -38,24 +42,37 @@
 #include "common.h"
 #include "vd.h"
 
+/** VDI comment size. */
 #define VDI_COMMENT_SIZE (256)
+
+/** VDI signature. */
 #define VDI_SIGNATURE    (0xbeda107f)
 
+/** VDI type identifier. */
 enum vdi_type {
+	/** Dynamic image. */
 	VDI_DYNAMIC = 1,
+	/** Fixed image. */
 	VDI_FIXED,
+	/** Undo image. */
 	VDI_UNDO,
+	/** Differencing image. */
 	VDI_DIFF
 };
 
+/** Type used in entries of BAM. */
 typedef uint32_t vdi_bam_entry_t;
 
+/** Returns size of single BAM entry in VDI. */
 #define VDI_BAM_ENTRY_SIZE        sizeof(vdi_bam_entry_t)
+/** Calculates BAM size for \p blk_count in VDI. */
 #define VDI_BAM_SIZE(blk_count)   ((blk_count) * VDI_BAM_ENTRY_SIZE)
+/** Default data offset alignment in VDI enforced by vidma. */
 #define VDI_DATA_OFFSET_ALIGNMENT _1MB
+/** Sector size in VDI. */
 #define VDI_SECTOR_SIZE           512
 
-/* 16 bytes */
+/** UUID type used in VDI. */
 typedef struct vdi_uuid {
 	uint32_t   part1;
 	uint16_t   part2;
@@ -63,36 +80,41 @@ typedef struct vdi_uuid {
 	uint8_t    part4[2];
 	uint8_t    part5[6];
 }  vdi_uuid_t;
+/* 16 bytes */
 
-/* 68 bytes */
+/** VDI preheader: file info and signature. */
 typedef struct vdi_preheader {
 	char       file_info[64];
 	uint32_t   signature;
 } vdi_preheader_t;
+/* 68 bytes */
 
-/* 16 bytes */
+/** VDI cylinders/head/sectors/sector size information. */
 typedef struct vdi_chs {
 	uint32_t   cylinders;       /* = 0 */
 	uint32_t   heads;           /* = 0 */
 	uint32_t   sectors;         /* = 0 */
 	uint32_t   sector_size;     /* = 512 */
 } vdi_chs_t;
+/* 16 bytes */
 
-/* 8 bytes */
+/** VDI offset information: BAM and data. */
 typedef struct vdi_offset {
 	uint32_t   bam;
 	uint32_t   data;
 } vdi_off_t;
+/* 8 bytes */
 
-/* 64 bytes */
+/** VDI UUIDs of linked images. */
 typedef struct vdi_uuid_set {
 	vdi_uuid_t create;
 	vdi_uuid_t modify;
 	vdi_uuid_t linkage;
 	vdi_uuid_t parent_modify;
 } vdi_uset_t;
+/* 64 bytes */
 
-/* 24 bytes */
+/** VDI disk image information. */
 typedef struct vdi_disk_info {
 	uint64_t   size;
 	uint32_t   blk_size;
@@ -100,9 +122,10 @@ typedef struct vdi_disk_info {
 	uint32_t   blk_count;
 	uint32_t   blk_count_alloc;
 } vdi_di_t;
+/* 24 bytes */
 
-/* 400 bytes */
 #pragma pack(1)
+/** VDI header */
 typedef struct vdi_header {
 	uint32_t   size;
 	uint32_t   type;
@@ -115,15 +138,17 @@ typedef struct vdi_header {
 	vdi_uset_t uuid;
 	vdi_chs_t  lchs;
 } vdi_header_t;
+/* 400 bytes */
 #pragma pack()
 
-/* 512 bytes */
+/** VDI start: preheader, version, header and garbage. */
 typedef struct vdi_start {
 	vdi_preheader_t pre;
 	uint32_t        version;
 	vdi_header_t    header;
 	uint32_t        garbage[10];
 } vdi_start_t;
+/* 512 bytes */
 
 extern vd_type_t vd_vdi;
 

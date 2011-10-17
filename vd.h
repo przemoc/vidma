@@ -11,21 +11,41 @@
  * for more details.
  */
 
+/** \file vd.h
+ * Virtual Disk common stuff.
+ */
+
 #ifndef VD_H
 #define VD_H
 
 #include <inttypes.h>
 
+/** VD operations that can be supported.
+ *
+ * All functions take file descriptor as first argument.
+ * Following arguments depend on the operation.
+ */
 typedef struct vd_ops {
-	int (*detect)(int);                /* detect(fd) */
-	void (*info)(int);                 /* info(fd) */
-	int (*resize)(int, int, uint32_t); /* resize(fd_in,fd_out,new_size_in_mb) */
+
+	/* detect(int fd) */
+	int (*detect)(int);
+	/**< Detects whether image seems to conform VD type. */
+
+	/* info(int fd) */
+	void (*info)(int);
+	/**< Logs information about the image. */
+
+	/* resize(int fd_in, int fd_out, uint32_t new_size_in_mb) */
+	int (*resize)(int, int, uint32_t);
+	/**< Resizes the image. */
+
 } vd_ops_t;
 
+/** VD type definition. */
 typedef struct vd_type {
-	char *ext;
-	char *name;
-	vd_ops_t ops;
+	char *ext;          /**< Common file extension. */
+	char *name;         /**< Name. */
+	vd_ops_t ops;       /**< Operations. */
 } vd_type_t;
 
 #endif /* VD_H */

@@ -11,6 +11,10 @@
  * for more details.
  */
 
+/** \file common.h
+ * Common stuff.
+ */
+
 #ifndef COMMON_H
 #define COMMON_H
 
@@ -18,15 +22,29 @@
 #include <inttypes.h>
 #include <sys/time.h>
 
+/** Value denoting success. */
 #define SUCCESS	0
+/** Value denoting failure. */
 #define FAILURE	1
 
+/** Shorthand for 1 megabyte. */
 #define _1MB (1 << 20)
 
+/** Aligns \p n to next multiple of \p a (where \p a must be power of 2).
+ *
+ * \param n number requiring alignment
+ * \param a alignment base (must be power of 2)
+ */
 #define ALIGN2(n, a) (((n) + (a) - 1) & ~((a) - 1))
+/** Aligns \p n to next multiple of \p a.
+ *
+ * \param n number requiring alignment
+ * \param a alignment base
+ */
 #define ALIGN(n, a)  ((((n) + (a) - 1) / (a)) * (a))
 
 #define Q_(x) #x
+/** Wraps \p x in quotes. */
 #define Q(x) Q_(x)
 
 static inline uint64_t gettimeofday_us()
@@ -67,7 +85,9 @@ static inline uint64_t max_u64(uint64_t a, uint64_t b)
 # define fsync _commit
 # define lseek lseek64
 
+/** Truncates file behind \p fd descriptor to given \p length. */
 int ftruncate64_win(int fd, int64_t length);
+/** Returns \a SUCCESS if file behind \p fd1 and \p fd2 is one and the same. */
 int same_file_behind_fds_win(int fd1, int fd2);
 
 # define ftruncate ftruncate64_win
@@ -79,6 +99,7 @@ int same_file_behind_fds_win(int fd1, int fd2);
 # define O_BINARY 0
 # endif
 
+/** Returns \a SUCCESS if file behind \p fd1 and \p fd2 is one and the same. */
 int same_file_behind_fds_posix(int fd1, int fd2);
 
 # define same_file_behind_fds same_file_behind_fds_posix
