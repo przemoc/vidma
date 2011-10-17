@@ -20,6 +20,8 @@ VIDMA_VERSION := $(shell \
 	awk "/\* What's new in version /"'{print "v" $$6 ((NR!=1)?"+":"");exit}' $(SRCDIR)/NEWS 2>/dev/null || \
 	echo unknown )
 
+CC := cc
+
 CFLAGS += -Wall -O2
 override CFLAGS += -std=c99 -Wno-variadic-macros \
                    -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=600 \

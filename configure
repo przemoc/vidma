@@ -74,6 +74,7 @@ for OPT in "$@"; do
 	--datarootdir=*) modify DATADIR  ;;
 	--mandir=*)      modify MANDIR   ;;
 	--docdir=*)      modify DOCDIR   ;;
+	CC=*)            modify CC       ;;
 	CPPFLAGS=*)      modify CPPFLAGS ;;
 	CFLAGS=*)        modify CFLAGS   ;;
 	LDFLAGS=*)       modify LDFLAGS  ;;
