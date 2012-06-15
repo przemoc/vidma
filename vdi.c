@@ -56,6 +56,7 @@ static inline uint64_t ext_blk_size64(vdi_start_t *vdi);
 static inline uint64_t disk_size(vdi_start_t *vdi, uint32_t blk_count);
 static inline uint64_t image_data_size(vdi_start_t *vdi,
                                        uint32_t blk_count_alloc);
+static inline uint64_t image_size(vdi_start_t *vdi, uint32_t blk_count);
 static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
                          uint32_t new_blk_count);
 static inline void fill_bam_with_unallocated_entries(vdi_bam_entry_t *bam,
@@ -308,6 +309,8 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 	uint32_t min_blk_count = 1;
 	int32_t delta = data_offset(vdi, new_blk_count) - vdi->header.offset.data;
 	uint64_t new_disk_size = disk_size(vdi, new_blk_count);
+	uint64_t old_image_size = image_size(vdi, vdi->header.disk.blk_count);
+	uint64_t new_image_size = image_size(vdi, new_blk_count);
 	int same_file = same_file_behind_fds(fin, fout) == SUCCESS;
 
 	ui->log("Requested disk resize\n"
@@ -333,6 +336,12 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 	        "\n",
 	        vdi->header.disk.size, vdi->header.disk.size / _1MB,
 	        new_disk_size, new_disk_size / _1MB);
+	ui->log("Image size will change\n"
+	        "from %21"PRIu64" bytes (%15"PRIu64" MB)\n"
+	        "to   %21"PRIu64" bytes (%15"PRIu64" MB)\n"
+	        "\n",
+	        old_image_size, old_image_size / _1MB,
+	        new_image_size, new_image_size / _1MB);
 
 	if (same_file) {
 		ui->log("Resize operation will be performed in-place.\n");
@@ -392,6 +401,16 @@ static inline uint64_t image_data_size(vdi_start_t *vdi,
                                        uint32_t blk_count_alloc)
 {
 	return (uint64_t)ext_blk_size(vdi) * blk_count_alloc;
+}
+
+static inline uint64_t image_size(vdi_start_t *vdi, uint32_t blk_count)
+{
+	uint32_t blocks = blk_count;
+
+	if (vdi->header.type == VDI_DYNAMIC)
+		blocks = min_u32(vdi->header.disk.blk_count_alloc, blk_count);
+
+	return data_offset(vdi, blk_count) + image_data_size(vdi, blocks);
 }
 
 static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
