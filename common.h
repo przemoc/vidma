@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
+ * Copyright (C) 2009-2012 Przemyslaw Pawelczyk <przemoc@gmail.com>
  *
  * This software is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2.
@@ -29,6 +29,12 @@
 
 /** Shorthand for 1 megabyte. */
 #define _1MB (1 << 20)
+
+/** Checks whether \p n is a power of 2. */
+#define IS_POWER_OF_2(n) !(n & (n - 1))
+
+/** Checks whether \p n is a positive power of 2. */
+#define IS_POSITIVE_POWER_OF_2(n) (n > 1 && IS_POWER_OF_2(n))
 
 /** Aligns \p n to next multiple of \p a (where \p a must be power of 2).
  *

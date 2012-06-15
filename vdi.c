@@ -51,7 +51,11 @@ static void find_last_blocks(vdi_start_t *vdi, int fd,
 static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
                                uint32_t new_blk_count);
 static inline uint32_t data_offset(vdi_start_t *vdi, uint32_t blk_count);
+static inline uint32_t ext_blk_size(vdi_start_t *vdi);
+static inline uint64_t ext_blk_size64(vdi_start_t *vdi);
 static inline uint64_t disk_size(vdi_start_t *vdi, uint32_t blk_count);
+static inline uint64_t image_data_size(vdi_start_t *vdi,
+                                       uint32_t blk_count_alloc);
 static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
                          uint32_t new_blk_count);
 static inline void fill_bam_with_unallocated_entries(vdi_bam_entry_t *bam,
@@ -208,8 +212,8 @@ static int check_assumptions(vdi_start_t *vdi)
 		ui->log("ERROR   Not supported VDI format version.\n");
 		return FAILURE;
 	}
-	if (vdi->header.disk.blk_extra_data != 0) {
-		ui->log("ERROR   Blocks with extra data are not supported yet.\n");
+	if (ext_blk_size64(vdi) > UINT32_MAX) {
+		ui->log("ERROR   Block size + extra data size > %"PRIu32".\n", UINT32_MAX);
 		return FAILURE;
 	}
 	if (vdi->header.offset.bam > vdi->header.offset.data) {
@@ -249,6 +253,13 @@ static int check_correctness(vdi_start_t *vdi)
 		errors += ui->log("ERROR   BAM overlaps data.\n") >= 0;
 	if (vdi->header.disk.blk_count_alloc > vdi->header.disk.blk_count)
 		errors += ui->log("ERROR   Insane number of allocated blocks.\n") >= 0;
+	if (!IS_POSITIVE_POWER_OF_2(vdi->header.disk.blk_size))
+		errors += ui->log("ERROR   Block size other than "
+		                  "2^n (n >= 1).\n");
+	if (vdi->header.disk.blk_extra_data &&
+	    !IS_POSITIVE_POWER_OF_2(vdi->header.disk.blk_extra_data))
+		errors += ui->log("ERROR   Block extra data size other than "
+		                  "2^n (n >= 1).\n");
 	if (disksize != vdi->header.disk.size)
 		errors += ui->log("ERROR   block size (%u), block count (%u) "
 		                  "and disk size (%"PRIu64") mismatch.\n",
@@ -296,6 +307,7 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 	uint32_t last_blk_pos = 0;
 	uint32_t min_blk_count = 1;
 	int32_t delta = data_offset(vdi, new_blk_count) - vdi->header.offset.data;
+	uint64_t new_disk_size = disk_size(vdi, new_blk_count);
 	int same_file = same_file_behind_fds(fin, fout) == SUCCESS;
 
 	ui->log("Requested disk resize\n"
@@ -320,7 +332,8 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 	        "to   %21"PRIu64" bytes (%15"PRIu64" MB)\n"
 	        "\n",
 	        vdi->header.disk.size, vdi->header.disk.size / _1MB,
-	        disk_size(vdi, new_blk_count), disk_size(vdi, new_blk_count) / _1MB);
+	        new_disk_size, new_disk_size / _1MB);
+
 	if (same_file) {
 		ui->log("Resize operation will be performed in-place.\n");
 		if (delta)
@@ -331,7 +344,7 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 			ui->log("CAUTION Only disk metadata will be modified.\n"
 			        "        In case of fail data loss is highly unlikely,\n"
 			        "        but image METADATA CAN BE CORRUPTED!\n");
-		if (vdi->header.disk.size > disk_size(vdi, new_blk_count))
+		if (vdi->header.disk.size > new_disk_size)
 			ui->log("WARNING Shrinking disk in-place means\n"
 			        "        IRRETRIEVABLY LOSING DATA KEPT BEYOND NEW SIZE!\n");
 	} else {
@@ -359,9 +372,26 @@ static inline uint32_t data_offset(vdi_start_t *vdi, uint32_t blk_count)
 	       ? vdi->header.offset.data  : min_offset_data_aligned;
 }
 
+static inline uint32_t ext_blk_size(vdi_start_t *vdi)
+{
+	return vdi->header.disk.blk_extra_data + vdi->header.disk.blk_size;
+}
+
+static inline uint64_t ext_blk_size64(vdi_start_t *vdi)
+{
+	return (uint64_t)vdi->header.disk.blk_extra_data +
+	       (uint64_t)vdi->header.disk.blk_size;
+}
+
 static inline uint64_t disk_size(vdi_start_t *vdi, uint32_t blk_count)
 {
 	return ((uint64_t)blk_count) * ((uint64_t)vdi->header.disk.blk_size);
+}
+
+static inline uint64_t image_data_size(vdi_start_t *vdi,
+                                       uint32_t blk_count_alloc)
+{
+	return (uint64_t)ext_blk_size(vdi) * blk_count_alloc;
 }
 
 static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
@@ -370,7 +400,7 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 	uint32_t i;
 	char *buffer;
 	uint64_t start, end;
-	uint32_t bs = vdi->header.disk.blk_size;
+	uint32_t ebs = ext_blk_size(vdi);
 	uint32_t blocks = min_u32(vdi->header.disk.blk_count_alloc, new_blk_count);
 	int32_t delta = data_offset(vdi, new_blk_count) - vdi->header.offset.data;
 	int same_file = (same_file_behind_fds(fin, fout) == SUCCESS);
@@ -381,21 +411,21 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 	if (delta || !same_file) {
 		ui->next_step(same_file ? "Moving blocks" : "Copying blocks");
 		ui->set_step_prog_max(blocks);
-		buffer = malloc(bs + delta * (delta > 0));
+		buffer = malloc(ebs + delta * (delta > 0));
 		start = gettimeofday_us();
 		if (delta > 0) {
-			read(fin, buffer + bs, delta);
+			read(fin, buffer + ebs, delta);
 			for (i = 1; i <= blocks; i++) {
 				ui->set_step_prog_val(i);
-				memcpy(buffer, buffer + bs, delta);
-				read(fin, buffer + delta, bs);
-				write(fout, buffer, bs);
+				memcpy(buffer, buffer + ebs, delta);
+				read(fin, buffer + delta, ebs);
+				write(fout, buffer, ebs);
 			}
 		} else
 			for (i = 1; i <= blocks; i++) {
 				ui->set_step_prog_val(i);
-				read(fin, buffer, bs);
-				write(fout, buffer, bs);
+				read(fin, buffer, ebs);
+				write(fout, buffer, ebs);
 			}
 		ui->log("Syncing\n");
 		fsync(fout);
@@ -408,7 +438,7 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 			        blocks,
 			        abs(delta),
 			        (end - start) / 1000,
-			        ((uint64_t)blocks * (uint64_t)bs) / (end - start)
+			        ((uint64_t)blocks * (uint64_t)ebs) / (end - start)
 			       );
 		else
 			ui->log(
@@ -416,7 +446,7 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 			        "in %"PRIu64" ms = ~%"PRIu64" B/us)\n",
 			        blocks,
 			        (end - start) / 1000,
-			        ((uint64_t)blocks * (uint64_t)bs) / (end - start)
+			        ((uint64_t)blocks * (uint64_t)ebs) / (end - start)
 			       );
 	} else {
 		ui->next_step("No need to move blocks");
@@ -527,7 +557,7 @@ static void update_file_size(vdi_start_t *vdi, int fd)
 	ui->next_step("Updating file size");
 	ftruncate(fd,
 	          vdi->header.offset.data +
-	          disk_size(vdi, vdi->header.disk.blk_count_alloc));
+	          image_data_size(vdi, vdi->header.disk.blk_count_alloc));
 	ui->set_step_prog_val(1);
 	ui->log("Syncing\n");
 	fsync(fd);
