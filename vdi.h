@@ -57,7 +57,9 @@ enum vdi_type {
 	/** Undo image. */
 	VDI_UNDO,
 	/** Differencing image. */
-	VDI_DIFF
+	VDI_DIFF,
+	/** Known VDI types count + 1. */
+	VDI_TYPE_MAX_1
 };
 
 /** Type used in entries of BAM. */

@@ -108,6 +108,7 @@ static int vdi_resize(int fin, int fout, uint32_t new_msize)
 /* ==== Defines and Macros ================================================== */
 
 #define PRINT(f,a...)  ui->log("%-*s = " f, 32, a)
+#define PRINTU32NN(v,i)  PRINT("%08x %u", #i, (uint32_t)v->i, (uint32_t)v->i)
 #define PRINTU32(v,i)  PRINT("%08x %u\n", #i, (uint32_t)v->i, (uint32_t)v->i)
 #define PRINTSTR(v,i)  PRINT("%s\n", #i, (char *)v->i)
 #define PRINTUUID(v,i) \
@@ -118,9 +119,18 @@ static int vdi_resize(int fin, int fout, uint32_t new_msize)
 	} while (0)
 #define PRINTU64(v,i) \
 	PRINT("%016"PRIx64" %"PRIu64"\n", #i, (uint64_t)v->i, (uint64_t)v->i)
+#define PRINTNOTE(s)   ui->log(" (%s)\n", s)
 
 #define FILL_SHIFT 4
 #define FILL_COUNT (1 << FILL_SHIFT)
+
+char *types[5] = {
+	"unknown",
+	"dynamic",
+	"fixed",
+	"undo",
+	"diff"
+};
 
 /* ==== Non-exposed functions definitions =================================== */
 
@@ -134,6 +144,12 @@ static void print_uuid(vdi_uuid_t *uuid)
 	       );
 }
 
+static char *type(vdi_start_t *vdi)
+{
+	return types[vdi->header.type < VDI_TYPE_MAX_1 ?
+	             vdi->header.type : 0];
+}
+
 static void print_info_from_struct(vdi_start_t *v, int full)
 {
 	if (full) {
@@ -141,7 +157,8 @@ static void print_info_from_struct(vdi_start_t *v, int full)
 		PRINTU32(v, pre.signature);
 		PRINTU32(v, version);
 		PRINTU32(v, header.size);
-		PRINTU32(v, header.type);
+		PRINTU32NN(v, header.type);
+		PRINTNOTE(type(v));
 		PRINTU32(v, header.flags);
 		PRINTU32(v, header.offset.bam);
 	}
