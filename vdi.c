@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
+ * Copyright (C) 2009-2012 Przemyslaw Pawelczyk <przemoc@gmail.com>
  *
  * This software is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2.
@@ -54,6 +54,8 @@ static inline uint32_t data_offset(vdi_start_t *vdi, uint32_t blk_count);
 static inline uint64_t disk_size(vdi_start_t *vdi, uint32_t blk_count);
 static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
                          uint32_t new_blk_count);
+static inline void fill_bam_with_unallocated_entries(vdi_bam_entry_t *bam,
+                                                     uint32_t n);
 static inline void fill_bam_with_consecutive_values(vdi_bam_entry_t *bam,
                                                     vdi_bam_entry_t start_val,
                                                     uint32_t n);
@@ -257,7 +259,7 @@ static void find_last_blocks(vdi_start_t *vdi, int fd,
 		         min_u64(VDI_BAM_SIZE((uint64_t)blocks), _1MB)) /
 		    VDI_BAM_ENTRY_SIZE;
 		for (i = 0; i < n; i++)
-			if (bam[i] != -1) {
+			if (bam[i] != VDI_BLK_NONE) {
 				no = i;
 				if (pos < bam[i])
 					pos = bam[i];
@@ -409,6 +411,13 @@ static void rewrite_data(vdi_start_t *vdi, int fin, int fout,
 	vdi->header.disk.blk_count_alloc = blocks;
 }
 
+static inline void fill_bam_with_unallocated_entries(vdi_bam_entry_t *bam,
+                                                     uint32_t n)
+{
+	for (uint32_t i = 0; i < n; i++)
+		bam[i] = VDI_BLK_NONE;
+}
+
 static inline void fill_bam_with_consecutive_values(vdi_bam_entry_t *bam,
                                                     vdi_bam_entry_t start_val,
                                                     uint32_t n)
@@ -452,8 +461,7 @@ static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout,
 		lseek(fout, vdi->header.offset.bam + VDI_BAM_SIZE(i), SEEK_SET);
 		j = ALIGN2(i, FILL_COUNT);
 		if (vdi->header.type == VDI_DYNAMIC) {
-			/* Fill with -1 (means unallocated). */
-			memset(fill, -1, VDI_BAM_SIZE(FILL_COUNT));
+			fill_bam_with_unallocated_entries(fill, FILL_COUNT);
 			i += write(fout, fill,
 			           VDI_BAM_SIZE((uint64_t)min_u32(j - i,
 			                                          new_blk_count - i))) /
@@ -462,7 +470,6 @@ static void update_block_allocation_map(vdi_start_t *vdi, int fin, int fout,
 				write(fout, fill, VDI_BAM_SIZE(FILL_COUNT));
 			write(fout, fill, VDI_BAM_SIZE(new_blk_count - i));
 		} else if (vdi->header.type == VDI_FIXED) {
-			/* Fill with consecutive values. */
 			fill_bam_with_consecutive_values(fill, i, FILL_COUNT);
 			i += write(fout, fill,
 			           VDI_BAM_SIZE((uint64_t)min_u32(j - i,

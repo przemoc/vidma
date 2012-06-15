@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
+ * Copyright (C) 2009-2012 Przemyslaw Pawelczyk <przemoc@gmail.com>
  *
  * This software is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2.
@@ -71,6 +71,11 @@ typedef uint32_t vdi_bam_entry_t;
 #define VDI_DATA_OFFSET_ALIGNMENT _1MB
 /** Sector size in VDI. */
 #define VDI_SECTOR_SIZE           512
+
+/** Unallocated block. */
+#define VDI_BLK_NONE              ((uint32_t)-1)
+/** Unallocated block meant to be filled with zeros. */
+#define VDI_BLK_ZERO              ((uint32_t)-2)
 
 /** UUID type used in VDI. */
 typedef struct vdi_uuid {
