@@ -290,7 +290,7 @@ static void find_last_blocks(vdi_start_t *vdi, int fd,
 		for (i = 0; i < n; i++)
 			if (bam[i] != VDI_BLK_NONE) {
 				no = i;
-				if (pos < bam[i])
+				if (bam[i] != VDI_BLK_ZERO && pos < bam[i])
 					pos = bam[i];
 			}
 	}
