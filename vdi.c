@@ -315,9 +315,9 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 
 	ui->log("Requested disk resize\n"
 	        "from %21u block(s)\nto   %21u block(s)\n"
-	        "(each block has %10u bytes)\n",
+	        "(each block has %10u bytes + %u extra bytes)\n",
 	        vdi->header.disk.blk_count, new_blk_count,
-	        vdi->header.disk.blk_size);
+	        vdi->header.disk.blk_size, vdi->header.disk.blk_extra_data);
 
 	if (vdi->header.type == VDI_DYNAMIC) {
 		find_last_blocks(vdi, fin, &last_blk_no, &last_blk_pos);
