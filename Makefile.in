@@ -9,6 +9,7 @@ ifneq (,$(HOST))
 endif
 CC := $(CROSS_COMPILE)gcc
 CCLD := $(CC)
+STRIP := $(CROSS_COMPILE)strip
 
 CC_V := $(shell $(CC) -v 2>&1)
 
@@ -81,6 +82,9 @@ install: $(OUT) $(MAN1)
 	$(INSTALL) -d $(DESTDIR)$(DOCDIR)
 	$(INSTALL_DATA) $(addprefix $(SRCDIR)/,$(DOCS)) $(DESTDIR)$(DOCDIR)
 
+strip: $(OUT)
+	$(STRIP) $^
+
 uninstall:
 	$(RM) $(DESTDIR)$(BINDIR)/$(OUT)
 	$(RM) -r $(DESTDIR)$(DOCDIR)
@@ -88,4 +92,4 @@ uninstall:
 
 FORCE:
 
-.PHONY: all clean distclean install uninstall
+.PHONY: all clean distclean install strip uninstall
