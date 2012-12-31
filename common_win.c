@@ -13,23 +13,6 @@
 
 #include "common.h"
 
-int ftruncate64_win(int fd, int64_t length)
-{
-	BOOL result;
-	HANDLE handle = (HANDLE)_get_osfhandle(fd);
-	LARGE_INTEGER offset;
-
-	offset.QuadPart = length;
-	SetFilePointerEx(handle, offset, NULL, FILE_BEGIN);
-	result = SetEndOfFile(handle);
-	/*
-	 * POSIX ftruncate() does not change file offset, so it should be
-	 * restored for compatibility, but we can ignore it for now.
-	 */
-
-	return result ? 0 : -1;
-}
-
 int same_file_behind_fds_win(int fd1, int fd2)
 {
 	BY_HANDLE_FILE_INFORMATION fd1_info, fd2_info;

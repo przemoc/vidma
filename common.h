@@ -91,12 +91,9 @@ static inline uint64_t max_u64(uint64_t a, uint64_t b)
 # define fsync _commit
 # define lseek lseek64
 
-/** Truncates file behind \p fd descriptor to given \p length. */
-int ftruncate64_win(int fd, int64_t length);
 /** Returns \a SUCCESS if file behind \p fd1 and \p fd2 is one and the same. */
 int same_file_behind_fds_win(int fd1, int fd2);
 
-# define ftruncate ftruncate64_win
 # define same_file_behind_fds same_file_behind_fds_win
 
 #else /* !__WIN32__ ~= POSIX */
