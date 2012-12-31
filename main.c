@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
+ * Copyright (C) 2009-2012 Przemyslaw Pawelczyk <przemoc@gmail.com>
  *
  * This software is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2.
@@ -23,7 +23,7 @@
 
 const char vidma_header_string[] =
 	"vidma - Virtual Disks Manipulator, " VIDMA_VERSION "\n"
-	"(C) 2009-2011 Przemyslaw Pawelczyk\n";
+	"(C) 2009-2012 Przemyslaw Pawelczyk\n";
 
 const char vidma_usage_string[] =
 	"Usage: %s INPUT_FILE [NEW_SIZE_IN_MB [OUTPUT_FILE]]\n"
@@ -71,6 +71,10 @@ int main(int argc, char *argv[])
 	}
 
 	fin = open(argv[1], O_RDONLY | O_BINARY);
+	if (fin < 0) {
+		perror(argv[1]);
+		exit(FAILURE);
+	}
 
 	for (; *type != NULL; type++) {
 		if ((*type)->ops.detect(fin) == SUCCESS) {
@@ -88,6 +92,11 @@ int main(int argc, char *argv[])
 	fout = open(argc == 4 ? argv[3] : argv[1],
 	            O_CREAT | O_WRONLY | O_BINARY,
 	            S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH);
+	if (fout < 0) {
+		perror(argc == 4 ? argv[3] : argv[1]);
+		exit(FAILURE);
+	}
+
 
 	if (argc == 2) {
 		(*type)->ops.info(fin);

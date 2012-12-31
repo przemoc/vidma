@@ -39,7 +39,7 @@ of currently supported formats:
 
 ## BUGS
 
-There is no free space checking before resizing and there is no error handling.
+There is no error handling beside assuring successful file opening.
 This means you won't notice a failure if it will happen. Obviously this has to
 be fixed in future versions.
 
@@ -74,4 +74,4 @@ Remember to provide following information:
 
 ## COPYRIGHT
 
-Copyright (C) 2009-2011 Przemyslaw Pawelczyk <<przemoc@gmail.com>>
+Copyright (C) 2009-2012 Przemyslaw Pawelczyk <<przemoc@gmail.com>>
