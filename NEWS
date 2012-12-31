@@ -1,3 +1,14 @@
+* What's new in version 0.0.4 (2012-12-31)
+
+- Unallocated blocks of zeroes are handled now properly (important for
+  shrinking dynamic images). Bug discovered thanks to Romain Guinot.
+
+- Non-zero extra blocks are supported now.
+
+- Upcoming image size change is shown before the resize operation, along
+  with the required free space for the operation and free space that is
+  available on the volume at this moment.
+
 * What's new in version 0.0.3b (2011-10-13)
 
 - Messages printed by vidma have been slightly changed.
