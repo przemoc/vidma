@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "VIDMA" "1" "February 2011" "" ""
+.TH "VIDMA" "1" "December 2012" "" ""
 .
 .SH "NAME"
 \fBvidma\fR \- Virtual Disks Manipulator
@@ -39,7 +39,7 @@ Format introduced by VirtualBox and mostly used by VirtualBox\. It has a few var
 .IP "" 0
 .
 .SH "BUGS"
-There is no free space checking before resizing and there is no error handling\. This means you won\'t notice a failure if it will happen\. Obviously this has to be fixed in future versions\.
+There is no error handling beside assuring successful file opening\. This means you won\'t notice a failure if it will happen\. Obviously this has to be fixed in future versions\.
 .
 .P
 To reduce possible damages of in\-place operation \fBALWAYS BACKUP YOUR IMAGE\fR or do not use in\-place operations at all by providing \fIOUTPUT_FILE\fR every time\.
@@ -86,4 +86,4 @@ If problem regards corrupted image, then paste information about the original im
 .IP "" 0
 .
 .SH "COPYRIGHT"
-Copyright (C) 2009\-2011 Przemyslaw Pawelczyk <\fIprzemoc@gmail\.com\fR>
+Copyright (C) 2009\-2012 Przemyslaw Pawelczyk <\fIprzemoc@gmail\.com\fR>
