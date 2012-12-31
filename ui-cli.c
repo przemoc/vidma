@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
+ * Copyright (C) 2012 Przemyslaw Pawelczyk <przemoc@gmail.com>
  *
  * This software is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2.
@@ -68,6 +68,7 @@ static int cli_yesno(const char *format, ...)
 	vprintf(format, ap);
 	va_end(ap);
 	printf(" (y/N) ");
+	fflush(stdout);
 	fgets(buf, sizeof(buf), stdin);
 
 	return (buf[0] == 'y' || buf[0] == 'Y') && buf[1] == '\n'
