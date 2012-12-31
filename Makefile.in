@@ -3,6 +3,13 @@ OBJS := main.o vdi.o ui-cli.o
 MAN1 := vidma.1
 OUT := vidma
 
+HOST := 
+ifneq (,$(HOST))
+	CROSS_COMPILE ?= $(HOST)-
+endif
+CC := $(CROSS_COMPILE)gcc
+CCLD := $(CC)
+
 CC_V := $(shell $(CC) -v 2>&1)
 
 ifneq (,$(findstring mingw,$(CC_V)))
@@ -19,8 +26,6 @@ VIDMA_VERSION := $(shell \
 	GIT_WORK_TREE="$(GIT_WORK_TREE)" git describe --tags --dirty 2>/dev/null || \
 	awk "/\* What's new in version /"'{print "v" $$6 ((NR!=1)?"+":"");exit}' $(SRCDIR)/NEWS 2>/dev/null || \
 	echo unknown )
-
-CC := cc
 
 CFLAGS += -Wall -O2
 override CFLAGS += -std=c99 -Wno-variadic-macros \
@@ -51,7 +56,7 @@ vdi.o: vdi.c vdi.h vd.h ui.h common.h
 ui-cli.o: ui-cli.c ui.h common.h
 
 $(OUT): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS)
+	$(CCLD) $(LDFLAGS) -o $@ $(OBJS)
 
 %.1: %.1.ronn
 	$(if $(shell test -n "$(NOT_IN_SRCDIR)" -a -f $(basename $<) -a ! $(basename $<) -ot $< && echo yes) , \

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
+# Copyright (C) 2011-2012 Przemyslaw Pawelczyk <przemoc@gmail.com>
 #
 # This software is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2.
@@ -42,6 +42,9 @@ Fine tuning of the installation directories:
   --mandir=DIR            man documentation [DATAROOTDIR/man]
   --docdir=DIR            documentation root [DATAROOTDIR/doc/vidma]
 
+System types:
+  --host=HOST       cross-compile to build programs to run on HOST
+
 Some influential environment variables:
   CFLAGS      C compiler flags
   LDFLAGS     linker flags
@@ -74,6 +77,7 @@ for OPT in "$@"; do
 	--datarootdir=*) modify DATADIR  ;;
 	--mandir=*)      modify MANDIR   ;;
 	--docdir=*)      modify DOCDIR   ;;
+	--host=*)        modify HOST     ;;
 	CC=*)            modify CC       ;;
 	CPPFLAGS=*)      modify CPPFLAGS ;;
 	CFLAGS=*)        modify CFLAGS   ;;
