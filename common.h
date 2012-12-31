@@ -93,8 +93,10 @@ static inline uint64_t max_u64(uint64_t a, uint64_t b)
 
 /** Returns \a SUCCESS if file behind \p fd1 and \p fd2 is one and the same. */
 int same_file_behind_fds_win(int fd1, int fd2);
+int get_volume_free_space_win(int fd, uint64_t *bytes);
 
 # define same_file_behind_fds same_file_behind_fds_win
+# define get_volume_free_space get_volume_free_space_win
 
 #else /* !__WIN32__ ~= POSIX */
 
@@ -104,8 +106,10 @@ int same_file_behind_fds_win(int fd1, int fd2);
 
 /** Returns \a SUCCESS if file behind \p fd1 and \p fd2 is one and the same. */
 int same_file_behind_fds_posix(int fd1, int fd2);
+int get_volume_free_space_posix(int fd, uint64_t *bytes);
 
 # define same_file_behind_fds same_file_behind_fds_posix
+# define get_volume_free_space get_volume_free_space_posix
 
 #endif /* __WIN32 __ */
 

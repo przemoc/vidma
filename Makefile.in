@@ -3,6 +3,8 @@ OBJS := main.o vdi.o ui-cli.o
 MAN1 := vidma.1
 OUT := vidma
 
+LDLIBS := 
+
 HOST := 
 ifneq (,$(HOST))
 	CROSS_COMPILE ?= $(HOST)-
@@ -15,6 +17,7 @@ CC_V := $(shell $(CC) -v 2>&1)
 
 ifneq (,$(findstring mingw,$(CC_V)))
 	OBJS += common_win.o
+	LDLIBS += -lntdll
 else
 	OBJS += common_posix.o
 endif
@@ -57,7 +60,7 @@ vdi.o: vdi.c vdi.h vd.h ui.h common.h
 ui-cli.o: ui-cli.c ui.h common.h
 
 $(OUT): $(OBJS)
-	$(CCLD) $(LDFLAGS) -o $@ $(OBJS)
+	$(CCLD) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
 %.1: %.1.ronn
 	$(if $(shell test -n "$(NOT_IN_SRCDIR)" -a -f $(basename $<) -a ! $(basename $<) -ot $< && echo yes) , \

@@ -304,6 +304,7 @@ static void find_last_blocks(vdi_start_t *vdi, int fd,
 static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
                                uint32_t new_blk_count)
 {
+	uint64_t free_bytes = 0;
 	uint32_t last_blk_no = 0;
 	uint32_t last_blk_pos = 0;
 	uint32_t min_blk_count = 1;
@@ -312,6 +313,9 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 	uint64_t old_image_size = image_size(vdi, vdi->header.disk.blk_count);
 	uint64_t new_image_size = image_size(vdi, new_blk_count);
 	int same_file = same_file_behind_fds(fin, fout) == SUCCESS;
+	uint64_t req_bytes = same_file ? (new_image_size > old_image_size
+	                                  ? new_image_size - old_image_size : 0)
+	                               : new_image_size;
 
 	ui->log("Requested disk resize\n"
 	        "from %21u block(s)\nto   %21u block(s)\n"
@@ -342,6 +346,17 @@ static int resize_confirmation(vdi_start_t *vdi, int fin, int fout,
 	        "\n",
 	        old_image_size, old_image_size / _1MB,
 	        new_image_size, new_image_size / _1MB);
+
+	ui->log("Required free space on the volume\n"
+	        "     %21"PRIu64" bytes (%15"PRIu64" MB)\n",
+	        req_bytes, req_bytes / _1MB);
+	get_volume_free_space(fout, &free_bytes);
+	ui->log("Available free space on the volume\n"
+	        "     %21"PRIu64" bytes (%15"PRIu64" MB)\n",
+	        free_bytes, free_bytes / _1MB);
+	if (free_bytes < req_bytes)
+		ui->log("which seems not enough to perform the resize operation!\n");
+	ui->log("\n");
 
 	if (same_file) {
 		ui->log("Resize operation will be performed in-place.\n");

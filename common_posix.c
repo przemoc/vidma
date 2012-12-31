@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2011 Przemyslaw Pawelczyk <przemoc@gmail.com>
+ * Copyright (C) 2009-2012 Przemyslaw Pawelczyk <przemoc@gmail.com>
  *
  * This software is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2.
@@ -14,6 +14,7 @@
 #include "common.h"
 
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 
 int same_file_behind_fds_posix(int fd1, int fd2)
 {
@@ -25,4 +26,17 @@ int same_file_behind_fds_posix(int fd1, int fd2)
 	return (fd1_stat.st_dev == fd2_stat.st_dev &&
 	        fd1_stat.st_ino == fd2_stat.st_ino)
 	       ? SUCCESS : FAILURE;
+}
+
+int get_volume_free_space_posix(int fd, uint64_t *bytes)
+{
+	int res;
+	struct statvfs stat;
+
+	res = fstatvfs(fd, &stat);
+
+	if (!res)
+		*bytes = (uint64_t)stat.f_frsize * (uint64_t)stat.f_bavail;
+
+	return !res ? SUCCESS : FAILURE;
 }
