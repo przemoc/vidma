@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2011-2012 Przemyslaw Pawelczyk <przemoc@gmail.com>
+# Copyright (C) 2011-2013 Przemyslaw Pawelczyk <przemoc@gmail.com>
 #
 # This software is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2.
@@ -43,12 +43,13 @@ Fine tuning of the installation directories:
   --docdir=DIR            documentation root [DATAROOTDIR/doc/vidma]
 
 System types:
-  --host=HOST       cross-compile to build programs to run on HOST
+  --host=HOST             cross-compile to build programs to run on HOST
 
 Some influential environment variables:
-  CFLAGS      C compiler flags
-  LDFLAGS     linker flags
-  CPPFLAGS    C/C++/Objective C preprocessor flags
+  CFLAGS       C compiler flags
+  LDFLAGS      linker flags
+  CPPFLAGS     C/C++/Objective C preprocessor flags
+  TARGET_ARCH  Compiler and linker flags regarding target arch, like: -m32
 "
 	exit 0
 }
@@ -82,6 +83,7 @@ for OPT in "$@"; do
 	CPPFLAGS=*)      modify CPPFLAGS ;;
 	CFLAGS=*)        modify CFLAGS   ;;
 	LDFLAGS=*)       modify LDFLAGS  ;;
+	TARGET_ARCH=*)   modify TARGET_ARCH ;;
 	esac
 done
 

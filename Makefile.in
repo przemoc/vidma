@@ -1,28 +1,51 @@
+#
+# Copyright (C) 2009-2013 Przemyslaw Pawelczyk <przemoc@gmail.com>
+#
+# This software is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2.
+# See <http://www.gnu.org/licenses/gpl-2.0.txt>.
+#
+# This software is distributed in the hope that it will be useful, but
+# WITHBIN ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+
+NAME := vidma
 DOCS := AUTHORS NEWS README.md
 OBJS := main.o vdi.o ui-cli.o
-MAN1 := vidma.1
-OUT := vidma
+MAN1 := $(NAME).1
+BIN  := $(NAME)
 
 LDLIBS := 
 
 HOST := 
+TARGET_ARCH := 
 ifneq (,$(HOST))
 	CROSS_COMPILE ?= $(HOST)-
 endif
-CC := $(CROSS_COMPILE)gcc
+ifeq ($(CC),)
+CC := gcc
+endif
+CC := $(CROSS_COMPILE)$(CC)
 CCLD := $(CC)
 STRIP := $(CROSS_COMPILE)strip
 
 CC_V := $(shell $(CC) -v 2>&1)
 
-ifneq (,$(findstring mingw,$(CC_V)))
+CC_PARAMS = $(CFLAGS) $(CPPFLAGS) $(TARGET_ARCH)
+
+SYSDEFINES_CMD := $(CC) $(CC_PARAMS) -E -dM -x c /dev/null
+
+ifeq ($(shell $(SYSDEFINES_CMD) | sed '/^.define \<_WIN32\> /!d;s///'),1)
 	OBJS += common_win.o
 	LDLIBS += -lntdll
+	BIN := $(addsuffix .exe,$(BIN))
 else
 	OBJS += common_posix.o
 endif
 
-SRCDIR := .
+SRCDIR := $(dir $(lastword $(MAKEFILE_LIST)))
 NOT_IN_SRCDIR := $(shell test ! . -ef $(SRCDIR) && echo 1)
 GIT_WORK_TREE := $(SRCDIR)
 
@@ -31,10 +54,13 @@ VIDMA_VERSION := $(shell \
 	awk "/\* What's new in version /"'{print "v" $$6 ((NR!=1)?"+":"");exit}' $(SRCDIR)/NEWS 2>/dev/null || \
 	echo unknown )
 
-CFLAGS += -Wall -O2
-override CFLAGS += -std=c99 -Wno-variadic-macros \
+OPTIONAL_FLAGS := -O2
+MANDATORY_FLAGS := -ggdb -Wall -std=c99 -Wno-variadic-macros \
                    -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=600 \
                    -DVIDMA_VERSION="\"$(VIDMA_VERSION)\""
+
+CFLAGS += $(OPTIONAL_FLAGS)
+override CFLAGS += $(MANDATORY_FLAGS)
 CPPFLAGS += 
 LDFLAGS += 
 
@@ -42,10 +68,10 @@ PREFIX := /usr/local
 EPREFIX := $(PREFIX)
 BINDIR := $(EPREFIX)/bin
 DATADIR := $(PREFIX)/share
-DOCDIR := $(DATADIR)/doc/$(OUT)
+DOCDIR := $(DATADIR)/doc/$(NAME)
 MANDIR := $(DATADIR)/man
 
-INSTALL := install -o root -g 0
+INSTALL := install
 INSTALL_DATA := $(INSTALL) -m 0644
 INSTALL_EXEC := $(INSTALL) -m 0755
 
@@ -53,14 +79,17 @@ vpath %.c $(SRCDIR)
 vpath %.h $(SRCDIR)
 vpath %.ronn $(SRCDIR)
 
-all: $(OUT)
+all: $(BIN)
 
 main.o: FORCE main.c vdi.h ui.h common.h
 vdi.o: vdi.c vdi.h vd.h ui.h common.h
 ui-cli.o: ui-cli.c ui.h common.h
 
-$(OUT): $(OBJS)
-	$(CCLD) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+%.o: %.c
+	$(CC) $(CC_PARAMS) -c -o $@ $<
+
+$(BIN): $(OBJS)
+	$(CCLD) $(addprefix -Wl$(comma),$(LDFLAGS)) $(TARGET_ARCH) -o $@ $(OBJS) $(LDLIBS)
 
 %.1: %.1.ronn
 	$(if $(shell test -n "$(NOT_IN_SRCDIR)" -a -f $(basename $<) -a ! $(basename $<) -ot $< && echo yes) , \
@@ -72,24 +101,24 @@ $(OUT): $(OBJS)
 	ronn -5 --pipe --style=toc $< >$@
 
 clean:
-	$(RM) $(OUT) $(OBJS) $(if $(NOT_IN_SRCDIR),$(MAN1))
+	$(RM) $(BIN) $(OBJS) $(if $(NOT_IN_SRCDIR),$(MAN1))
 
 distclean: clean
 	$(RM) Makefile $(MAN1).html
 
-install: $(OUT) $(MAN1)
+install: $(BIN) $(MAN1)
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
-	$(INSTALL_EXEC) $(OUT) $(DESTDIR)$(BINDIR)/$(OUT)
+	$(INSTALL_EXEC) $(BIN) $(DESTDIR)$(BINDIR)/$(BIN)
 	$(INSTALL) -d $(DESTDIR)$(MANDIR)/man1
 	$(INSTALL_DATA) $(SRCDIR)/$(MAN1) $(DESTDIR)$(MANDIR)/man1/$(MAN1)
 	$(INSTALL) -d $(DESTDIR)$(DOCDIR)
 	$(INSTALL_DATA) $(addprefix $(SRCDIR)/,$(DOCS)) $(DESTDIR)$(DOCDIR)
 
-strip: $(OUT)
+strip: $(BIN)
 	$(STRIP) $^
 
 uninstall:
-	$(RM) $(DESTDIR)$(BINDIR)/$(OUT)
+	$(RM) $(DESTDIR)$(BINDIR)/$(BIN)
 	$(RM) -r $(DESTDIR)$(DOCDIR)
 	$(RM) $(DESTDIR)$(MANDIR)/man1/$(MAN1)
 
