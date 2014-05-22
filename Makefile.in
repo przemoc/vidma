@@ -59,10 +59,16 @@ MANDATORY_FLAGS := -ggdb -Wall -std=c99 -Wno-variadic-macros \
                    -D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE=600 \
                    -DVIDMA_VERSION="\"$(VIDMA_VERSION)\""
 
+comma := ,
+
 CFLAGS += $(OPTIONAL_FLAGS)
 override CFLAGS += $(MANDATORY_FLAGS)
 CPPFLAGS += 
+override LDFLAGS := $(subst -Wl$(comma),,$(LDFLAGS))
+override LDFLAGS := $(subst $(comma), ,$(LDFLAGS))
 LDFLAGS += 
+CCLDFLAGS := $(addprefix -Wl$(comma),$(LDFLAGS))
+
 
 PREFIX := /usr/local
 EPREFIX := $(PREFIX)
@@ -89,7 +95,7 @@ ui-cli.o: ui-cli.c ui.h common.h
 	$(CC) $(CC_PARAMS) -c -o $@ $<
 
 $(BIN): $(OBJS)
-	$(CCLD) $(addprefix -Wl$(comma),$(LDFLAGS)) $(TARGET_ARCH) -o $@ $(OBJS) $(LDLIBS)
+	$(CCLD) $(CCLDFLAGS) $(TARGET_ARCH) -o $@ $(OBJS) $(LDLIBS)
 
 %.1: %.1.ronn
 	$(if $(shell test -n "$(NOT_IN_SRCDIR)" -a -f $(basename $<) -a ! $(basename $<) -ot $< && echo yes) , \
